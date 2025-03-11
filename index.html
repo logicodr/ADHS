@@ -30,6 +30,7 @@
         .container {
             max-width: 500px;
             margin: 0 auto;
+            padding-bottom: 20px;
         }
         
         .header {
@@ -408,11 +409,6 @@
             justify-content: center;
             align-items: center;
             gap: 8px;
-            margin-bottom: 10px;
-        }
-        
-        .delete-all-btn {
-            background-color: #CD5C5C;
         }
         
         .reset-icon {
@@ -475,6 +471,7 @@
             <h2>Meine Aktivitäten</h2>
             <div style="display: flex; gap: 8px;">
                 <button class="add-btn" id="show-add-form">+ Aktivität</button>
+                <button class="add-btn" id="delete-all-btn" style="background-color: #CD5C5C;">Alle löschen</button>
             </div>
         </div>
         
@@ -530,20 +527,19 @@
             <button class="save-btn" id="save-departure">Einstellungen speichern</button>
         </div>
         
-        <!-- New reset container with delete all button -->
+        </div>
+    
+    <div class="notification" id="notification">
+        Zeit zum Ausgehen!
+    </div>
+    
+    <!-- New Reset Container moved to bottom -->
+    <div class="container" style="margin-top: 30px; margin-bottom: 30px;">
         <div class="reset-container">
-            <button class="reset-btn delete-all-btn" id="delete-all-btn">
-                <span class="reset-icon">🗑️</span> Alle Aktivitäten löschen
-            </button>
-            
             <button class="reset-btn" id="reset-app">
                 <span class="reset-icon">↺</span> Daten löschen / App zurücksetzen
             </button>
         </div>
-    </div>
-    
-    <div class="notification" id="notification">
-        Zeit zum Ausgehen!
     </div>
     
     <!-- Audio Element für den Alarm - with local file -->
@@ -1242,6 +1238,7 @@
         }
         
         function showNotification(message, duration = 5000) {
+            // In-app notification
             notificationEl.textContent = message;
             notificationEl.classList.add('show');
             
@@ -1254,6 +1251,41 @@
             notificationTimeout = setTimeout(() => {
                 notificationEl.classList.remove('show');
             }, duration);
+            
+            // Try to show a system notification for lock screens (if permission granted)
+            try {
+                // Check if we have notification permission and service worker is supported
+                if ('Notification' in window && 'serviceWorker' in navigator) {
+                    if (Notification.permission === 'granted') {
+                        // Show notification
+                        navigator.serviceWorker.ready.then(registration => {
+                            registration.showNotification('ADHS Jetzt-Planer', {
+                                body: message,
+                                vibrate: [200, 100, 200],
+                                tag: 'adhs-planer-notification',
+                                renotify: true
+                            });
+                        });
+                    } else if (Notification.permission !== 'denied') {
+                        // We need to ask for permission
+                        Notification.requestPermission().then(permission => {
+                            if (permission === 'granted') {
+                                navigator.serviceWorker.ready.then(registration => {
+                                    registration.showNotification('ADHS Jetzt-Planer', {
+                                        body: message,
+                                        vibrate: [200, 100, 200],
+                                        tag: 'adhs-planer-notification',
+                                        renotify: true
+                                    });
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.log('System notification failed:', e);
+                // Fall back to in-app notification only (already handled above)
+            }
         }
         
         // Utility functions
@@ -1344,9 +1376,24 @@
             }
         }
         
+        // Register service worker for PWA support
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            }
+        }
+        
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
             try {
+                // Register service worker
+                registerServiceWorker();
                 // Load saved state
                 loadState();
                 
