@@ -30,6 +30,7 @@
         .container {
             max-width: 500px;
             margin: 0 auto;
+            padding-bottom: 20px;
         }
         
         .header {
@@ -385,6 +386,35 @@
             bottom: 20px;
         }
         
+        /* Reset button styles */
+        .reset-container {
+            margin-top: 20px;
+            background-color: var(--cream);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .reset-btn {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .reset-icon {
+            font-size: 1.2rem;
+        }
+        
         /* Mobile specific styles */
         @media (max-width: 480px) {
             body {
@@ -496,6 +526,13 @@
             
             <button class="save-btn" id="save-departure">Einstellungen speichern</button>
         </div>
+        
+        <!-- New Reset Container -->
+        <div class="reset-container">
+            <button class="reset-btn" id="reset-app">
+                <span class="reset-icon">↺</span> Daten löschen / App zurücksetzen
+            </button>
+        </div>
     </div>
     
     <div class="notification" id="notification">
@@ -542,6 +579,22 @@
         let alarmTimeout = null;
         let notificationTimeout = null;
         let taskCountdownInterval = null;
+        
+        // Reset app function
+        function resetApp() {
+            if (confirm('Bist du sicher, dass du alle Daten löschen und die App zurücksetzen möchtest?')) {
+                // Clear all data from localStorage
+                localStorage.removeItem('adhsJetztPlaner');
+                
+                // Show notification
+                showNotification('App wurde zurückgesetzt. Seite wird neu geladen...', 2000);
+                
+                // Reload the page after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        }
         
         // Delete All Activities function
         function deleteAllActivities() {
@@ -659,6 +712,19 @@
                 playTaskCompleteSound();
                 showNotification(`Zeit abgelaufen für: ${activity.name}`, 5000);
                 
+                // Show task completed notification
+                if (Notification.permission === 'granted') {
+                    sendTaskNotification(
+                        'Aufgabe abgeschlossen!', 
+                        {
+                            body: `${activity.name} ist fertig!`,
+                            icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIGZpbGw9IiMzQTVGMEIiIHJ4PSIyMCIgcnk9IjIwIi8+PHRleHQgeD0iNjQiIHk9IjgwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNTAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7inIU8L3RleHQ+PC9zdmc+',
+                            tag: 'task-complete',
+                            vibrate: [200, 100, 200]
+                        }
+                    );
+                }
+                
                 // Auto-complete the task
                 completeActivity(activity.id, true);
                 
@@ -707,6 +773,11 @@
             const taskPrefix = activity.orderIndex === 0 ? '' : 'Aktuelle Aufgabe: ';
             
             taskCountdownEl.textContent = `${taskPrefix}${activity.name}: noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`;
+            
+            // Update notification on lock screen every minute
+            if (remainingSeconds === 0 || remainingMs <= 60000) {
+                updateTaskNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr);
+            }
             
             // Change color when less than 1 minute remains
             if (remainingMs < 60000) {
@@ -1178,6 +1249,20 @@
                 console.log("Alarm triggered!");
                 playAlarm();
                 showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`, 10000);
+                
+                // Also send system notification if permissions granted
+                if (Notification.permission === 'granted') {
+                    sendTaskNotification(
+                        'Zeit zum Ausgehen!', 
+                        {
+                            body: `In ${state.alarm.time} Minuten musst du rausgehen!`,
+                            icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIGZpbGw9IiNDRDVDNUMiIHJ4PSIyMCIgcnk9IjIwIi8+PHRleHQgeD0iNjQiIHk9IjgwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNTAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imIc8L3RleHQ+PC9zdmc+',
+                            tag: 'departure-alarm',
+                            vibrate: [300, 100, 300, 100, 300],
+                            requireInteraction: true  // Keep notification until user dismisses it
+                        }
+                    );
+                }
             }, timeUntilAlarm * 60 * 1000);
         }
         
@@ -1284,9 +1369,104 @@
             }
         }
         
+        // Notification functions
+        let notificationPermissionRequested = false;
+        let taskNotification = null;
+        
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                console.log('Notifications not supported in this browser');
+                return Promise.resolve(false);
+            }
+            
+            if (Notification.permission === 'granted') {
+                return Promise.resolve(true);
+            }
+            
+            if (Notification.permission === 'denied') {
+                console.log('Notification permission was denied before');
+                return Promise.resolve(false);
+            }
+            
+            notificationPermissionRequested = true;
+            
+            return Notification.requestPermission()
+                .then(permission => {
+                    if (permission === 'granted') {
+                        showNotification('Benachrichtigungen aktiviert!', 3000);
+                        return true;
+                    } else {
+                        console.log('Notification permission denied');
+                        return false;
+                    }
+                });
+        }
+        
+        function sendTaskNotification(title, options) {
+            // Check if service worker is available and registered
+            if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+                console.log('Service worker not available for notifications');
+                return;
+            }
+            
+            // Close any existing notification
+            if (taskNotification) {
+                taskNotification.close();
+                taskNotification = null;
+            }
+            
+            // Create new notification
+            navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification(title, options)
+                    .then(() => {
+                        console.log('Task notification sent');
+                    })
+                    .catch(error => {
+                        console.error('Error sending notification:', error);
+                    });
+            });
+        }
+        
+        function updateTaskNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr) {
+            if (Notification.permission !== 'granted') {
+                return; // No permission, no notification
+            }
+            
+            const title = `${activity.name}`;
+            const options = {
+                body: `Noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`,
+                icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIGZpbGw9IiM2QjhFMjMiIHJ4PSIyMCIgcnk9IjIwIi8+PHRleHQgeD0iNjQiIHk9IjgwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNTAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5ONPC90ZXh0Pjwvc3ZnPg==',
+                badge: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIGZpbGw9IiM2QjhFMjMiIHJ4PSIyMCIgcnk9IjIwIi8+PHRleHQgeD0iNjQiIHk9IjgwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNTAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5ONPC90ZXh0Pjwvc3ZnPg==',
+                tag: 'current-task',
+                renotify: true,
+                silent: true,  // No sound for updates
+                // For Android, we need to use actions
+                actions: [
+                    {
+                        action: 'complete',
+                        title: '✓ Erledigt'
+                    }
+                ]
+            };
+            
+            // Send the notification
+            sendTaskNotification(title, options);
+        }
+        
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
             try {
+                // Register service worker for notifications
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('service-worker.js')
+                        .then(registration => {
+                            console.log('Service Worker registered with scope:', registration.scope);
+                        })
+                        .catch(error => {
+                            console.error('Service Worker registration failed:', error);
+                        });
+                }
+                
                 // Load saved state
                 loadState();
                 
@@ -1319,6 +1499,13 @@
                 // Set up alarm if enabled
                 scheduleAlarm();
                 
+                // Request notification permission after a short delay
+                setTimeout(() => {
+                    if (!notificationPermissionRequested && state.activities.length > 0) {
+                        requestNotificationPermission();
+                    }
+                }, 3000);
+                
                 // Event listeners
                 document.getElementById('show-add-form').addEventListener('click', function() {
                     addFormEl.style.display = 'block';
@@ -1333,6 +1520,17 @@
                 document.getElementById('add-activity-btn').addEventListener('click', addActivity);
                 document.getElementById('delete-all-btn').addEventListener('click', deleteAllActivities);
                 document.getElementById('save-departure').addEventListener('click', saveSettings);
+                document.getElementById('reset-app').addEventListener('click', resetApp);
+                
+                // Add notification permission button
+                const resetContainer = document.querySelector('.reset-container');
+                const notificationBtn = document.createElement('button');
+                notificationBtn.className = 'reset-btn';
+                notificationBtn.style.marginTop = '10px';
+                notificationBtn.style.backgroundColor = '#6B8E23';
+                notificationBtn.innerHTML = '<span class="reset-icon">🔔</span> Benachrichtigungen aktivieren';
+                notificationBtn.addEventListener('click', requestNotificationPermission);
+                resetContainer.appendChild(notificationBtn);
                 
                 alarmToggleEl.addEventListener('change', function() {
                     state.alarm.enabled = this.checked;
