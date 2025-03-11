@@ -92,6 +92,14 @@
             color: var(--success-color);
         }
         
+        .buffer-time.warning {
+            color: var(--warning-color);
+        }
+        
+        .buffer-time.danger {
+            color: var(--terracotta);
+        }
+        
         .activities-header {
             display: flex;
             justify-content: space-between;
@@ -407,36 +415,7 @@
         </div>
         
         <div id="activity-list">
-            <!-- Beispiel-Aktivitäten -->
-            <div class="activity current">
-                <div class="activity-time">12:30</div>
-                <div class="activity-name">Zähne putzen</div>
-                <div class="activity-duration">5 min</div>
-                <div class="activity-actions">
-                    <button class="activity-btn complete-btn">✓</button>
-                    <button class="activity-btn delete-btn">×</button>
-                </div>
-            </div>
-            
-            <div class="activity">
-                <div class="activity-time">12:35</div>
-                <div class="activity-name">Frühstück machen</div>
-                <div class="activity-duration">15 min</div>
-                <div class="activity-actions">
-                    <button class="activity-btn complete-btn">✓</button>
-                    <button class="activity-btn delete-btn">×</button>
-                </div>
-            </div>
-            
-            <div class="activity completed">
-                <div class="activity-time">12:00</div>
-                <div class="activity-name">Aufstehen</div>
-                <div class="activity-duration">0 min</div>
-                <div class="activity-actions">
-                    <button class="activity-btn revert-btn">↺</button>
-                    <button class="activity-btn delete-btn">×</button>
-                </div>
-            </div>
+            <!-- Activities will be dynamically added here -->
         </div>
         
         <div class="departure-setting">
@@ -481,7 +460,7 @@
         Zeit zum Ausgehen!
     </div>
     
-    <!-- Audio Element für den Alarm - UPDATED with local file -->
+    <!-- Audio Element für den Alarm - with local file -->
     <audio id="alarm-sound">
         <source src="alert-sound-87478.mp3" type="audio/mpeg">
         Dein Browser unterstützt das Audio-Element nicht.
@@ -519,8 +498,414 @@
         let alarmTimeout = null;
         let notificationTimeout = null;
         
-        // Initialize
+        // Activity-related functions
+        function createActivityElement(activity) {
+            const activityEl = document.createElement('div');
+            activityEl.className = activity.completed ? 'activity completed' : 'activity';
+            if (activity.isCurrent) {
+                activityEl.classList.add('current');
+            }
+            
+            activityEl.dataset.id = activity.id;
+            
+            activityEl.innerHTML = `
+                <div class="activity-time">${activity.startTime}</div>
+                <div class="activity-name">${activity.name}</div>
+                <div class="activity-duration">${activity.duration} min</div>
+                <div class="activity-actions">
+                    ${activity.completed 
+                        ? '<button class="activity-btn revert-btn">↺</button>'
+                        : '<button class="activity-btn complete-btn">✓</button>'}
+                    <button class="activity-btn delete-btn">×</button>
+                </div>
+            `;
+            
+            // Add event listeners
+            const completeBtn = activityEl.querySelector('.complete-btn');
+            if (completeBtn) {
+                completeBtn.addEventListener('click', () => {
+                    completeActivity(activity.id);
+                });
+            }
+            
+            const revertBtn = activityEl.querySelector('.revert-btn');
+            if (revertBtn) {
+                revertBtn.addEventListener('click', () => {
+                    revertActivity(activity.id);
+                });
+            }
+            
+            const deleteBtn = activityEl.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', () => {
+                deleteActivity(activity.id);
+            });
+            
+            return activityEl;
+        }
+        
+        function renderActivities() {
+            // Clear current list
+            activityListEl.innerHTML = '';
+            
+            if (state.activities.length === 0) {
+                activityListEl.innerHTML = '<div class="no-activities">Keine Aktivitäten geplant. Füge eine hinzu!</div>';
+                return;
+            }
+            
+            // Sort by start time
+            const sortedActivities = [...state.activities].sort((a, b) => {
+                return timeStringToMinutes(a.startTime) - timeStringToMinutes(b.startTime);
+            });
+            
+            // Find current activity (first non-completed activity)
+            let currentActivitySet = false;
+            for (let i = 0; i < sortedActivities.length; i++) {
+                if (!sortedActivities[i].completed && !currentActivitySet) {
+                    sortedActivities[i].isCurrent = true;
+                    currentActivitySet = true;
+                } else {
+                    sortedActivities[i].isCurrent = false;
+                }
+            }
+            
+            // Render each activity
+            sortedActivities.forEach(activity => {
+                activityListEl.appendChild(createActivityElement(activity));
+            });
+        }
+        
+        function updateStartTimes() {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            
+            // Round to nearest 5 minutes
+            let startMinutes = Math.ceil(currentMinutes / 5) * 5;
+            
+            // Sort by completed status (completed activities go first)
+            const sortedActivities = [...state.activities].sort((a, b) => {
+                if (a.completed && !b.completed) return -1;
+                if (!a.completed && b.completed) return 1;
+                return 0;
+            });
+            
+            sortedActivities.forEach(activity => {
+                if (!activity.completed) {
+                    activity.startTime = formatTimeString(startMinutes);
+                    startMinutes += parseInt(activity.duration);
+                }
+            });
+            
+            // Update state and render
+            state.activities = sortedActivities;
+            saveState();
+            renderActivities();
+        }
+        
+        function formatTimeString(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        }
+        
+        function addActivity() {
+            const activityName = activityNameEl.value.trim();
+            const activityDuration = parseInt(activityDurationEl.value);
+            
+            if (activityName && activityDuration > 0) {
+                // Get current time as start time
+                const now = new Date();
+                const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                // Round to nearest 5 minutes
+                const startMinutes = Math.ceil(currentMinutes / 5) * 5;
+                
+                // Create new activity
+                const newActivity = {
+                    id: Date.now().toString(), // Unique ID
+                    name: activityName,
+                    duration: activityDuration,
+                    startTime: formatTimeString(startMinutes),
+                    completed: false
+                };
+                
+                // Add to state
+                state.activities.push(newActivity);
+                
+                // Update start times for all activities
+                updateStartTimes();
+                
+                // Update time summary
+                updateTimeSummary();
+                
+                // Reset form
+                activityNameEl.value = '';
+                addFormEl.style.display = 'none';
+                
+                // Save state
+                saveState();
+            }
+        }
+        
+        function completeActivity(id) {
+            const activity = state.activities.find(a => a.id === id);
+            if (activity) {
+                activity.completed = true;
+                updateStartTimes();
+                updateTimeSummary();
+                saveState();
+                
+                // Play a short activity completion sound
+                playActivityCompleteSound();
+                showNotification(`Aktivität erledigt: ${activity.name}`);
+            }
+        }
+        
+        function playActivityCompleteSound() {
+            // Create a short beep sound for activity completion
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            const gainNode = context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(context.destination);
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 1000; // Higher pitch than alarm
+            gainNode.gain.value = 0.1; // Lower volume than alarm
+            
+            oscillator.start();
+            
+            // Short duration
+            setTimeout(() => {
+                oscillator.stop();
+                context.close();
+            }, 500);
+        }
+        
+        function revertActivity(id) {
+            const activity = state.activities.find(a => a.id === id);
+            if (activity) {
+                activity.completed = false;
+                updateStartTimes();
+                updateTimeSummary();
+                saveState();
+            }
+        }
+        
+        function deleteActivity(id) {
+            state.activities = state.activities.filter(a => a.id !== id);
+            updateStartTimes();
+            updateTimeSummary();
+            saveState();
+        }
+        
+        // Time management functions
+        function updateTimeDisplay() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            currentTimeEl.textContent = `${hours}:${minutes}`;
+        }
+        
+        function updateTimeSummary() {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const departureMinutes = timeStringToMinutes(state.departureTime);
+            
+            // Available time
+            let availableTime = departureMinutes - currentMinutes;
+            if (availableTime < 0) availableTime = 0;
+            
+            // Planned time (sum of non-completed activities durations)
+            const plannedTime = state.activities
+                .filter(a => !a.completed)
+                .reduce((total, activity) => total + parseInt(activity.duration), 0);
+            
+            // Buffer time
+            const bufferTime = Math.max(0, availableTime - plannedTime);
+            
+            // Update display
+            availableTimeEl.textContent = formatTimeValue(availableTime);
+            plannedTimeEl.textContent = formatTimeValue(plannedTime);
+            bufferTimeEl.textContent = formatTimeValue(bufferTime);
+            
+            // Update buffer time color
+            if (bufferTime < 10) {
+                bufferTimeEl.classList.add('danger');
+                bufferTimeEl.classList.remove('warning');
+            } else if (bufferTime < 30) {
+                bufferTimeEl.classList.add('warning');
+                bufferTimeEl.classList.remove('danger');
+            } else {
+                bufferTimeEl.classList.remove('warning');
+                bufferTimeEl.classList.remove('danger');
+            }
+            
+            // Update countdown
+            if (availableTime <= 0) {
+                countdownEl.textContent = 'Zeit zum Ausgehen!';
+                countdownEl.style.backgroundColor = '#CD5C5C';
+            } else {
+                countdownEl.textContent = `Du musst in ${formatTimeSpan(availableTime)} rausgehen`;
+                countdownEl.style.backgroundColor = '';
+            }
+        }
+        
+        // Settings functions
+        function saveSettings() {
+            state.departureTime = departureTimeEl.value;
+            state.alarm.enabled = alarmToggleEl.checked;
+            state.alarm.time = parseInt(alarmTimeEl.value);
+            
+            saveState();
+            
+            // Update UI
+            updateStartTimes();
+            updateTimeSummary();
+            
+            // Schedule alarm with new settings
+            if (alarmTimeout) {
+                clearTimeout(alarmTimeout);
+                alarmTimeout = null;
+            }
+            
+            if (state.alarm.enabled) {
+                scheduleAlarm();
+            }
+            
+            // Show confirmation
+            const saveBtn = document.getElementById('save-departure');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Gespeichert!';
+            saveBtn.disabled = true;
+            
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }, 1500);
+        }
+        
+        // Alarm functions
+        function scheduleAlarm() {
+            if (!state.alarm.enabled) return;
+            
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const departureMinutes = timeStringToMinutes(state.departureTime);
+            
+            // Calculate time until alarm should trigger (departure time - alarm minutes)
+            const alarmMinutes = departureMinutes - state.alarm.time;
+            let timeUntilAlarm = alarmMinutes - currentMinutes;
+            
+            // If alarm time is in the past, don't schedule
+            if (timeUntilAlarm <= 0) return;
+            
+            // Schedule alarm
+            alarmTimeout = setTimeout(() => {
+                playAlarm();
+                showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`, 10000);
+            }, timeUntilAlarm * 60 * 1000);
+        }
+        
+        function playAlarm() {
+            alarmSoundEl.currentTime = 0;
+            
+            // Request permission for notifications to enable audio (helps with autoplay restrictions)
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+            
+            // Try to play the sound
+            alarmSoundEl.play().catch(e => {
+                console.error("Couldn't play alarm:", e);
+                // If browser blocks autoplay, show an alert instead
+                if (e.name === 'NotAllowedError') {
+                    alert(`Alarm! In ${state.alarm.time} Minuten musst du rausgehen!`);
+                }
+            });
+        }
+        
+        function showNotification(message, duration = 5000) {
+            notificationEl.textContent = message;
+            notificationEl.classList.add('show');
+            
+            // Clear any existing timeout
+            if (notificationTimeout) {
+                clearTimeout(notificationTimeout);
+            }
+            
+            // Hide notification after specified duration (default 5 seconds)
+            notificationTimeout = setTimeout(() => {
+                notificationEl.classList.remove('show');
+            }, duration);
+            
+            // Try to use the browser's notification API as backup
+            if (Notification.permission === "granted") {
+                new Notification("ADHS Jetzt-Planer", {
+                    body: message,
+                    icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiM2QjhFMjMiIHJ4PSIxMCIgcnk9IjEwIi8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5ONPC90ZXh0Pjwvc3ZnPg=="
+                });
+            }
+        }
+        
+        // Utility functions
+        function timeStringToMinutes(timeString) {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        function formatTimeValue(minutes) {
+            if (minutes < 60) {
+                return `${minutes} Min`;
+            } else {
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                return `${hours}:${mins.toString().padStart(2, '0')} Std`;
+            }
+        }
+        
+        function formatTimeSpan(minutes) {
+            if (minutes < 60) {
+                return `${minutes} Minuten`;
+            } else {
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                
+                let result = `${hours} Stunde${hours !== 1 ? 'n' : ''}`;
+                if (mins > 0) {
+                    result += ` ${mins} Minute${mins !== 1 ? 'n' : ''}`;
+                }
+                
+                return result;
+            }
+        }
+        
+        // Storage functions
+        function saveState() {
+            try {
+                localStorage.setItem('adhsJetztPlaner', JSON.stringify(state));
+            } catch (e) {
+                console.log('localStorage not available:', e);
+            }
+        }
+        
+        function loadState() {
+            try {
+                const savedState = localStorage.getItem('adhsJetztPlaner');
+                if (savedState) {
+                    state = JSON.parse(savedState);
+                }
+            } catch (e) {
+                console.log('Error loading from localStorage:', e);
+            }
+        }
+        
+        // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
+            // Request notification permission early
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+            
             // Load saved state
             loadState();
             
@@ -535,6 +920,9 @@
             } else {
                 alarmOptionsEl.classList.remove('visible');
             }
+            
+            // Render activities
+            renderActivities();
             
             // Set up update intervals
             updateTimeDisplay();
@@ -610,194 +998,19 @@
                 }, 3000);
             });
             
-            // Add activity on Enter key in duration field
+            // Add activity on Enter key in fields
+            activityNameEl.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addActivity();
+                }
+            });
+            
             activityDurationEl.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     addActivity();
                 }
             });
         });
-        
-        // Update current time display
-        function updateTimeDisplay() {
-            const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            currentTimeEl.textContent = `${hours}:${minutes}`;
-        }
-        
-        // Update time summary
-        function updateTimeSummary() {
-            const now = new Date();
-            const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            const departureMinutes = timeStringToMinutes(state.departureTime);
-            
-            // Available time
-            let availableTime = departureMinutes - currentMinutes;
-            if (availableTime < 0) availableTime = 0;
-            
-            // Planned time (in real app, calculate from activities)
-            const plannedTime = 45; // Example value
-            
-            // Buffer time
-            const bufferTime = Math.max(0, availableTime - plannedTime);
-            
-            // Update display
-            availableTimeEl.textContent = formatTimeValue(availableTime);
-            plannedTimeEl.textContent = formatTimeValue(plannedTime);
-            bufferTimeEl.textContent = formatTimeValue(bufferTime);
-            
-            // Update countdown
-            if (availableTime <= 0) {
-                countdownEl.textContent = 'Zeit zum Ausgehen!';
-                countdownEl.style.backgroundColor = '#CD5C5C';
-            } else {
-                countdownEl.textContent = `Du musst in ${formatTimeSpan(availableTime)} rausgehen`;
-            }
-        }
-        
-        // Add a new activity
-        function addActivity() {
-            const activityName = activityNameEl.value.trim();
-            const activityDuration = parseInt(activityDurationEl.value);
-            
-            if (activityName && activityDuration > 0) {
-                // In the real app, this would add the activity to state.activities
-                
-                // Reset form
-                activityNameEl.value = '';
-                addFormEl.style.display = 'none';
-            }
-        }
-        
-        // Save settings
-        function saveSettings() {
-            state.departureTime = departureTimeEl.value;
-            state.alarm.enabled = alarmToggleEl.checked;
-            state.alarm.time = parseInt(alarmTimeEl.value);
-            
-            saveState();
-            
-            // Schedule alarm with new settings
-            if (alarmTimeout) {
-                clearTimeout(alarmTimeout);
-                alarmTimeout = null;
-            }
-            
-            if (state.alarm.enabled) {
-                scheduleAlarm();
-            }
-            
-            // Show confirmation
-            const saveBtn = document.getElementById('save-departure');
-            const originalText = saveBtn.textContent;
-            saveBtn.textContent = 'Gespeichert!';
-            saveBtn.disabled = true;
-            
-            setTimeout(() => {
-                saveBtn.textContent = originalText;
-                saveBtn.disabled = false;
-            }, 1500);
-        }
-        
-        // Schedule alarm based on current settings
-        function scheduleAlarm() {
-            if (!state.alarm.enabled) return;
-            
-            const now = new Date();
-            const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            const departureMinutes = timeStringToMinutes(state.departureTime);
-            
-            // Calculate time until alarm should trigger (departure time - alarm minutes)
-            const alarmMinutes = departureMinutes - state.alarm.time;
-            let timeUntilAlarm = alarmMinutes - currentMinutes;
-            
-            // If alarm time is in the past, don't schedule
-            if (timeUntilAlarm <= 0) return;
-            
-            // Schedule alarm
-            alarmTimeout = setTimeout(() => {
-                playAlarm();
-                showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`);
-            }, timeUntilAlarm * 60 * 1000);
-        }
-        
-        // Play alarm sound
-        function playAlarm() {
-            alarmSoundEl.currentTime = 0;
-            alarmSoundEl.play().catch(e => console.error("Couldn't play alarm:", e));
-        }
-        
-        // Show notification
-        function showNotification(message) {
-            notificationEl.textContent = message;
-            notificationEl.classList.add('show');
-            
-            // Clear any existing timeout
-            if (notificationTimeout) {
-                clearTimeout(notificationTimeout);
-            }
-            
-            // Hide notification after 10 seconds
-            notificationTimeout = setTimeout(() => {
-                notificationEl.classList.remove('show');
-            }, 10000);
-        }
-        
-        // Utility: Convert time string (HH:MM) to minutes since midnight
-        function timeStringToMinutes(timeString) {
-            const [hours, minutes] = timeString.split(':').map(Number);
-            return hours * 60 + minutes;
-        }
-        
-        // Utility: Format time value for display
-        function formatTimeValue(minutes) {
-            if (minutes < 60) {
-                return `${minutes} Min`;
-            } else {
-                const hours = Math.floor(minutes / 60);
-                const mins = minutes % 60;
-                return `${hours}:${mins.toString().padStart(2, '0')} Std`;
-            }
-        }
-        
-        // Utility: Format time span in natural language
-        function formatTimeSpan(minutes) {
-            if (minutes < 60) {
-                return `${minutes} Minuten`;
-            } else {
-                const hours = Math.floor(minutes / 60);
-                const mins = minutes % 60;
-                
-                let result = `${hours} Stunde${hours !== 1 ? 'n' : ''}`;
-                if (mins > 0) {
-                    result += ` ${mins} Minute${mins !== 1 ? 'n' : ''}`;
-                }
-                
-                return result;
-            }
-        }
-        
-        // Save state to localStorage
-        function saveState() {
-            try {
-                localStorage.setItem('adhsJetztPlaner', JSON.stringify(state));
-            } catch (e) {
-                console.log('localStorage not available (likely in sandbox/preview mode)');
-            }
-        }
-        
-        // Load state from localStorage
-        function loadState() {
-            try {
-                const savedState = localStorage.getItem('adhsJetztPlaner');
-                if (savedState) {
-                    state = JSON.parse(savedState);
-                }
-            } catch (e) {
-                console.log('localStorage not available (likely in sandbox/preview mode)');
-            }
-        }
     </script>
 </body>
 </html>
