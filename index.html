@@ -1,183 +1,1902 @@
-"use client"
-
-import type * as React from "react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { Check, PackageOpen, ShieldCheck, SparklesIcon } from "lucide-react";
-import type { SVGProps } from "react";
-import { memo } from "react";
-
-interface UmzugButtonProps extends React.ComponentPropsWithoutRef<typeof Button> {
-  children: React.ReactNode;
-  variant?: "green" | "blue";
-}
-
-// Custom icon component
-const UmzugReinigungIcon = ({
-  className,
-  ...props
-}: SVGProps<SVGSVGElement> & { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-    {...props}
-  >
-    <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
-    <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9" />
-    <path d="M12 3v6" />
-    <path d="m10 5 4 4m0-4-4 4" />
-    <path d="m16 15 2-2m0 4 2-2m-8-2 2-2m0 4 2-2" />
-  </svg>
-);
-
-export function UmzugButton({ children, className, variant = "green", ...props }: UmzugButtonProps) {
-  return (
-    <div className={cn(
-      "relative",
-      "h-14 w-full", // Set fixed height for consistency
-    )}>
-      {/* Bottom layer - darker shade */}
-      <div className={cn(
-        "absolute inset-0 rounded-2xl",
-        variant === "green" ? "bg-[#043c36]" : "bg-[#2a5683]",
-        "translate-y-[6px]"
-      )} />
-      
-      {/* Main button */}
-      <Button
-        className={cn(
-          "relative w-full h-14 rounded-2xl px-6",
-          "font-medium text-base flex items-center justify-center gap-2",
-          "bg-white border-2",
-          variant === "green" 
-            ? "text-[#075e54] border-[#075e54]" 
-            : "text-[#427CBF] border-[#427CBF]",
-          "transition-all duration-100 ease-in-out",
-          "hover:-translate-y-1",
-          "active:translate-y-1",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </Button>
-    </div>
-  );
-}
-
-const defaultPhrase = "";
-const Features = memo(() => (
-  <div className="mb-8 grid gap-6 rounded-xl py-6 backdrop-blur-[2px]">
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Check className="h-5 w-5 flex-shrink-0 text-[#5fc069] sm:h-6 sm:w-6" />
-        <span className="text-sm text-[#7d7e92] sm:text-base">
-          Geprüfte Schweizer 🇨🇭 Umzugsfirmen
-        </span>
-      </div>
-      <div className="flex items-center gap-3">
-        <Check className="h-5 w-5 flex-shrink-0 text-[#5fc069] sm:h-6 sm:w-6" />
-        <span className="text-sm text-[#7d7e92] sm:text-base">
-          Sparen Sie bis zu 40% der Kosten
-        </span>
-      </div>
-      <div className="flex items-center gap-3">
-        <Check className="h-5 w-5 flex-shrink-0 text-[#5fc069] sm:h-6 sm:w-6" />
-        <span className="text-sm text-[#7d7e92] sm:text-base">
-          Keine zeitraubenden Besichtigungstermine
-        </span>
-      </div>
-      <div className="flex items-center gap-3">
-        <Check className="h-5 w-5 flex-shrink-0 text-[#5fc069] sm:h-6 sm:w-6" />
-        <span className="text-sm text-[#7d7e92] sm:text-base">
-          Unverbindliche Preisvergleiche ohne Telefonmarathon
-        </span>
-      </div>
-    </div>
-  </div>
-));
-
-export function HeroSection({ children }: { children?: React.ReactNode }) {
-  return (
-    <section className="relative overflow-hidden bg-gradient-to-b pt-16 md:pt-20">
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `radial-gradient(#6366f1 0.5px, transparent 0.5px), radial-gradient(#6366f1 0.5px, transparent 0.5px)`,
-          backgroundSize: "20px 20px",
-          backgroundPosition: "0 0, 10px 10px",
-          opacity: 0.05,
-        }}
-      />
-      <div className="relative container mx-auto px-4 py-12 sm:py-16 lg:py-18">
-        <div className="grid items-center gap-6 lg:grid-cols-5 lg:gap-8">
-          <div className="space-y-6 lg:col-span-3">
-            <div className="space-y-2 sm:space-y-4">
-              <h1 className="text-left text-3xl leading-none font-bold text-[#1D2939] sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl">
-                Umziehen ohne TamTam<span className="text-[#22c55e]">{defaultPhrase}</span>
-              </h1>
-              <p className="text-lg font-light sm:text-2xl sm:font-normal md:text-2xl lg:text-2xl text-gray-600 text-left">
-                In nur <span className="underline decoration-2">3 Minuten</span> anfragen – erhalten Sie bis zu 4
-                geprüfte Offerten, unverbindlich & sicher per <span className="font-bold text-[#25D366]">WhatsApp</span>
-                <svg
-                  viewBox="0 0 24 24"
-                  className="inline-block h-6 w-6 sm:h-8 sm:w-8 ml-2 align-text-bottom text-[#25D366]"
-                  fill="currentColor"
-                >
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                </svg>
-              </p>
-            </div>
-            <Features />
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              {/* First Button */}
-              <UmzugButton variant="green">
-                <PackageOpen className="h-5 w-5 flex-shrink-0" />
-                <span>Unverbindlich Anfragen</span>
-              </UmzugButton>
-              
-              {/* Second Button */}
-              <UmzugButton variant="blue">
-                <UmzugReinigungIcon className="h-5 w-5 flex-shrink-0" />
-                <span>Umzug & Reinigung</span>
-              </UmzugButton>
-              
-              {/* Third Button */}
-              <UmzugButton variant="blue">
-                <SparklesIcon className="h-5 w-5 flex-shrink-0" />
-                <span>Reinigung buchen</span>
-              </UmzugButton>
-            </div>
-            <div className="space-y-3">
-              <p className="mt-4 text-center text-sm text-gray-500">
-              Ihre Daten sind sicher & 100% verschlüsselt &ndash; Ihre Nummer geht nur an Ihre Wunschfirma nach Angebotsannahme{" "}
-                <ShieldCheck className="ml-1 inline-block h-4 w-4 align-text-bottom" />
-              </p>
-            </div>
-          </div>
-          <div className="relative mt-12 lg:col-span-2 lg:mt-0">
-            <div className="relative">
-              {children}
-              {/* Time Savings Tag */}
-              <div className="absolute -right-4 -bottom-4 max-w-[220px] rounded-lg bg-white p-3 shadow-lg">
-                <p className="text-sm font-semibold">
-                  Digitale Vermittlung bedeutet:
-                </p>
-                <p className="text-xs">
-                  Bis zu 40% Ersparnis • Keine Besichtigungen • Kein
-                  Telefonmarathon
-                </p>
-              </div>
-            </div>
-          </div>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADHS Jetzt-Planer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Modern color palette */
+            --primary: #4E6E81;
+            --primary-light: #6E8A9E;
+            --primary-dark: #3C576B;
+            --accent: #F97B22;
+            --accent-light: #FF9A54;
+            --accent-dark: #D85A00;
+            --success: #2ECC71;
+            --warning: #F1C40F;
+            --danger: #E74C3C;
+            --bg-color: #F9FAFB;
+            --surface: #FFFFFF;
+            --surface-alt: #F1F5F9;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --text-tertiary: #94A3B8;
+            --border: #E2E8F0;
+            
+            /* Sizes and spacing */
+            --radius-sm: 0.5rem;
+            --radius-md: 0.75rem;
+            --radius-lg: 1rem;
+            --spacing-xs: 0.5rem;
+            --spacing-sm: 0.75rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            
+            /* Shadow */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            font-size: 16px;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Layout */
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: var(--spacing-md);
+        }
+        
+        /* Header */
+        .app-header {
+            padding: var(--spacing-lg) var(--spacing-md);
+            background-color: var(--primary);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .header-content {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .current-time {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        /* Countdown */
+        .countdown-section {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-md) 0;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .countdown-section::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+            pointer-events: none;
+        }
+        
+        .countdown {
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .task-countdown {
+            background-color: var(--accent);
+            color: white;
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            text-align: center;
+            font-weight: 500;
+            margin-top: var(--spacing-md);
+            box-shadow: var(--shadow-sm);
+            display: none;
+            position: relative;
+            overflow: hidden;
+            animation: slidein 0.3s ease-out;
+        }
+        
+        @keyframes slidein {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .task-countdown::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+            pointer-events: none;
+        }
+        
+        /* Time Summary */
+        .time-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .time-box {
+            background-color: var(--surface);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .time-box:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .time-box-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .time-box-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .buffer-time {
+            color: var(--success);
+        }
+        
+        .buffer-time.warning {
+            color: var(--warning);
+        }
+        
+        .buffer-time.danger {
+            color: var(--danger);
+        }
+        
+        /* Activities Section */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .btn {
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 0.625rem 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-accent {
+            background-color: var(--accent);
+            color: white;
+        }
+        
+        .btn-accent:hover {
+            background-color: var(--accent-dark);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--surface-alt);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-small {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        .add-form {
+            background-color: var(--surface);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            display: none;
+            animation: fadein 0.3s ease-out;
+        }
+        
+        @keyframes fadein {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            color: var(--text-primary);
+            background-color: var(--surface);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(78, 110, 129, 0.1);
+        }
+        
+        .form-control-duration {
+            width: 6rem;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+        
+        /* Activity List */
+        .activity-list {
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .activity {
+            display: flex;
+            align-items: center;
+            background-color: var(--surface);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .activity.current {
+            border-left: 4px solid var(--accent);
+            background-color: #FFF8F3;
+        }
+        
+        .activity.completed {
+            background-color: var(--surface-alt);
+            border-left: 4px solid var(--success);
+        }
+        
+        .activity.completed .activity-name {
+            text-decoration: line-through;
+            color: var(--text-tertiary);
+        }
+        
+        .activity-time {
+            font-weight: 600;
+            width: 3.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .activity-name {
+            flex: 1;
+            padding: 0 var(--spacing-sm);
+            font-weight: 500;
+        }
+        
+        .activity-duration {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            width: 3rem;
+            text-align: right;
+            margin-right: var(--spacing-sm);
+        }
+        
+        .activity-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+        }
+        
+        .activity-btn {
+            width: 2.25rem;
+            height: 2.25rem;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: var(--surface-alt);
+            color: var(--text-secondary);
+        }
+        
+        .activity-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .complete-btn {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+        
+        .complete-btn:hover {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .revert-btn {
+            background-color: rgba(241, 196, 15, 0.1);
+            color: var(--warning);
+        }
+        
+        .revert-btn:hover {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .delete-btn {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger);
+        }
+        
+        .delete-btn:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .no-activities {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: var(--spacing-xl) 0;
+            font-size: 1rem;
+            background-color: var(--surface-alt);
+            border-radius: var(--radius-md);
+            border: 1px dashed var(--border);
+        }
+        
+        /* Departure Settings */
+        .card {
+            background-color: var(--surface);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .setting-label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .setting-value {
+            display: flex;
+            align-items: center;
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: var(--border);
+            margin: var(--spacing-md) 0;
+        }
+        
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 3rem;
+            height: 1.5rem;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 1.5rem;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 1.1rem;
+            width: 1.1rem;
+            left: 0.2rem;
+            bottom: 0.2rem;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        
+        input:focus + .slider {
+            box-shadow: 0 0 1px var(--primary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(1.5rem);
+        }
+        
+        .alarm-icon {
+            margin-left: var(--spacing-xs);
+            color: var(--accent);
+        }
+        
+        .alarm-options {
+            margin-top: var(--spacing-md);
+            display: none;
+            animation: fadein 0.3s ease-out;
+        }
+        
+        .alarm-options.visible {
+            display: block;
+        }
+        
+        /* Footer Actions */
+        .action-container {
+            padding: var(--spacing-lg) var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .action-btn {
+            width: 100%;
+            padding: var(--spacing-md) 0;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        /* Delete All Button */
+        .delete-all-container {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary-dark);
+            color: white;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            transition: bottom 0.3s ease-in-out;
+            text-align: center;
+            font-weight: 500;
+            max-width: 90%;
+            width: 350px;
+        }
+        
+        .notification.show {
+            bottom: var(--spacing-lg);
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 480px) {
+            html {
+                font-size: 15px;
+            }
+            
+            .container {
+                padding: var(--spacing-sm);
+            }
+            
+            .time-summary {
+                gap: var(--spacing-sm);
+            }
+            
+            .activity-btn {
+                width: 2.5rem;
+                height: 2.5rem;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+            
+            .form-control-duration {
+                width: 100%;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                padding: var(--spacing-lg);
+            }
+            
+            .card, .activity, .add-form {
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            
+            .card:hover, .activity:hover, .add-form:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-lg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- App Header -->
+    <header class="app-header">
+        <div class="header-content">
+            <h1 class="app-title">ADHS Jetzt-Planer</h1>
+            <div class="current-time" id="current-time">12:30</div>
         </div>
-      </div>
-    </section>
-  );
-}
+    </header>
+    
+    <div class="container">
+        <!-- Countdown Section -->
+        <div class="countdown-section">
+            <div class="countdown" id="countdown">
+                Du musst in 2 Stunden rausgehen
+            </div>
+            
+            <div class="task-countdown" id="task-countdown">
+                Aktuelle Aufgabe: noch 5 Minuten
+            </div>
+        </div>
+        
+        <!-- Time Summary -->
+        <div class="time-summary">
+            <div class="time-box">
+                <div class="time-box-label">Verfügbar</div>
+                <div class="time-box-value" id="available-time">2:00 Std</div>
+            </div>
+            <div class="time-box">
+                <div class="time-box-label">Geplant</div>
+                <div class="time-box-value" id="planned-time">45 Min</div>
+            </div>
+            <div class="time-box">
+                <div class="time-box-label">Puffer</div>
+                <div class="time-box-value buffer-time" id="buffer-time">1:15 Std</div>
+            </div>
+        </div>
+        
+        <!-- Activities Section -->
+        <div class="section-header">
+            <h2 class="section-title">Meine Aktivitäten</h2>
+            <button class="btn btn-primary" id="show-add-form">+ Neue Aktivität</button>
+        </div>
+        
+        <!-- Add Activity Form -->
+        <div class="add-form" id="add-form">
+            <div class="form-group">
+                <label class="form-label" for="activity-name">Was willst du tun?</label>
+                <input type="text" class="form-control" id="activity-name" placeholder="z.B. Duschen, E-Mails beantworten...">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="activity-duration">Wie lange? (Minuten)</label>
+                <input type="number" class="form-control" id="activity-duration" value="10" min="1" max="180">
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-primary" id="add-activity-btn">Hinzufügen</button>
+                <button class="btn btn-outline" id="cancel-add">Abbrechen</button>
+            </div>
+        </div>
+        
+        <!-- Activity List -->
+        <div class="activity-list" id="activity-list">
+            <!-- Activities will be dynamically added here -->
+        </div>
+        
+        <!-- Departure Settings -->
+        <div class="card">
+            <h3 class="card-title">Einstellungen</h3>
+            
+            <div class="setting-row">
+                <div class="setting-label">Wann musst du rausgehen?</div>
+                <input type="time" class="form-control" id="departure-time" value="14:30">
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="setting-row">
+                <div class="setting-label">
+                    Alarm aktivieren
+                    <span class="alarm-icon">🔔</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="alarm-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="alarm-options visible" id="alarm-options">
+                <div class="setting-row">
+                    <div class="setting-label">Alarm-Zeit vor Ausgehen:</div>
+                    <div class="setting-value">
+                        <select class="form-control" id="alarm-time">
+                            <option value="5">5 Minuten</option>
+                            <option value="10">10 Minuten</option>
+                            <option value="15" selected>15 Minuten</option>
+                            <option value="30">30 Minuten</option>
+                            <option value="60">1 Stunde</option>
+                        </select>
+                        <button class="btn btn-small btn-outline" id="test-alarm" style="margin-left: 0.5rem;">Test</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <button class="btn btn-primary" id="save-departure">Speichern</button>
+        </div>
+    </div>
+    
+    <!-- Delete All Button Container -->
+    <div class="container action-container">
+        <div class="delete-all-container">
+            <button class="btn btn-danger action-btn" id="delete-all-btn">
+                Alle Aktivitäten löschen
+            </button>
+        </div>
+    </div>
+    
+    <!-- Reset Button Container -->
+    <div class="container action-container">
+        <button class="btn btn-outline action-btn" id="reset-app">
+            App zurücksetzen
+        </button>
+    </div>
+    
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        Zeit zum Ausgehen!
+    </div>
+    
+    <!-- Audio Elements -->
+    <audio id="alarm-sound">
+        <source src="data:audio/wav;base64,UklGRuYCAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YcICAACAgICAgICAgICAgICAgICAgICAgICAgICAf3hxeH+AfXR1gIqAfHF0gIyFfG10f4+HeWpxeIqPgXBtD3WSkIN2ZmBygpOKf29eWm2JmI99b1lUY32Sk4d7Z1lWX3iUkGdjVlVid26Nj3VlZVtldGaCjnBnY1lheHR8gG9tbWJjbnF3eXt1dG1tbXEQfX16eXh5c3F1eX19fXz9weTtxQAAABURGiIeMzEhHRYNABUdJCYmJB8aEgwID4WdoKGnnDEhFQ0GBwUhLjk9QTs2MkBCQkA7PDw8OTY7PkBCRUhKSUpJRkA3FyYnKS0vMjQ1OTs9Pj9AQUFCQ0RFRkdISUpLp6SpqqmoqKioqKipqaqsrq+wsbKys7S0tba3t7i4uLm5urq7u7y8vb29vr6/v7/AwMDAwMDBwcHBwcHBwsLCwsLCwcHBwcHBwcHBwcHCwsLDw8TFxsfIyMnJysvLy8vMzMzMzM3Nzc3Nzc3Nzc3Nzc3Ozs7Ozs7Pz8/Pz8/Pz8/Pzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs/Pz8/Pz8/Pz8/Pz8/P0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQAzpcbAQDMxgKBStUIwMJJg8CBhkYCQQIEQoDChIOBAUREAoDDBMMBQwSEQ0GCxIPBwsQEQsHDRIPCQoQEQ0ICxIQCgkOEQ8KCQ8RDggMEBAMCA0RDwkLDxAOCQsQEAwJDRAQCwkOEQ8LCg0RDwsKDxAPCwoOEA8MCQ8QDgsJDxAOCwoPEA8LCg4QDwsKDhAPCwoOEA8LCg4QDwsKDhAPCwkPEA4LCQ8QDgsJDxAOCwkPEA4LCQ8QDgsJDhEOCwkOEQ4KCg4RDgoKDhEOCgoPEA8KCg8QDwoKDxAPCgoPEA8KCg8QDwoKDhEOCgkPEA4KCQ8QDgoJDxAOCgkPEA4KCQ8QDgoJDxAOCgkPEA4KCQ8QDgoJDhEOCQoOEQ4JCg4RDgkKDhEOCQkPEA4JCQ8QDgkJDxAOCQkPEA4JCQ8QDgkJDxAOCQkPEA4JCQ4RDgkJDhEOCQkOEQ4JCQ4RDgkJDhEOCQkOEQ4JCQ4RDgkIDxAOCQgPEA4JCA8QDgkIDxAOCQgPEA4JCA8QDgkIDhEOCAgOEQ4ICA4RDggIDhEOCAgOEQ4ICA4RDggIDhEOCAgOEQ4ICA4RDggHDxAOCAcPEA4IBw8QDggHDxAOCAcPEA4IBw8QDggHDhEOBwgOEQ4HCA4RDgcIDhEOBwgOEQ4HCA4RDgcIDhEOBwgOEQ4HBw8QDgcHDxAOBwcPEA4HBw8QDgcHDxAOBwcPEA4HBw4RDgcHDhEOBwcOEQ4HBw4RDgcHDhEOBwcOEQ4HBw4RDgYIDhEOBgcPEA4GBw8QDgYHDxAOBgcPEA4GBw8QDgYHDhEOBgcOEQ4GBw4RDgYHDhEOBgcOEQ4GBw4RDgYHDhEOBgYPEA4GBg8QDgYGDxAOBgYPEA4GBg8QDgYGDxAOBgYOEQ4GBg4RDgYGDhEOBgYOEQ3///9a" type="audio/wav">
+    </audio>
+    
+    <audio id="task-complete-sound">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAB4eHh4eHiIiJiYmGhoaFhYSEg4OCgoGBgICAAAAAA=" type="audio/wav">
+    </audio>
+    
+    <script>
+        // State management
+        let state = {
+            activities: [],
+            departureTime: '14:30',
+            alarm: {
+                enabled: true,
+                time: 15 // minutes before departure
+            },
+            currentTaskIndex: -1
+        };
+        
+        // DOM Elements
+        const currentTimeEl = document.getElementById('current-time');
+        const countdownEl = document.getElementById('countdown');
+        const taskCountdownEl = document.getElementById('task-countdown');
+        const availableTimeEl = document.getElementById('available-time');
+        const plannedTimeEl = document.getElementById('planned-time');
+        const bufferTimeEl = document.getElementById('buffer-time');
+        const activityListEl = document.getElementById('activity-list');
+        const addFormEl = document.getElementById('add-form');
+        const activityNameEl = document.getElementById('activity-name');
+        const activityDurationEl = document.getElementById('activity-duration');
+        const departureTimeEl = document.getElementById('departure-time');
+        const alarmToggleEl = document.getElementById('alarm-toggle');
+        const alarmOptionsEl = document.getElementById('alarm-options');
+        const alarmTimeEl = document.getElementById('alarm-time');
+        const alarmSoundEl = document.getElementById('alarm-sound');
+        const taskCompleteSoundEl = document.getElementById('task-complete-sound');
+        const notificationEl = document.getElementById('notification');
+        
+        // Global audio context
+        let audioContext = null;
+        let audioInitialized = false;
+        
+        // Alarm variables
+        let alarmTimeout = null;
+        let notificationTimeout = null;
+        let taskCountdownInterval = null;
+        
+        // Audio initialization - called on first button click
+        function initializeAudio() {
+            if (audioInitialized) return;
+            
+            try {
+                // Create audio context
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AudioContext();
+                
+                // Try to resume audioContext (important for iOS)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                // Attempt to play a silent sound to unlock audio on iOS
+                const silentSound = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = 0.01; // Very low volume
+                silentSound.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                silentSound.start();
+                silentSound.stop(audioContext.currentTime + 0.01);
+                
+                // Also try to play the audio elements briefly
+                alarmSoundEl.volume = 0.01;
+                taskCompleteSoundEl.volume = 0.01;
+                
+                const alarmPlayPromise = alarmSoundEl.play();
+                if (alarmPlayPromise !== undefined) {
+                    alarmPlayPromise.then(() => {
+                        alarmSoundEl.pause();
+                        alarmSoundEl.currentTime = 0;
+                        alarmSoundEl.volume = 1.0;
+                    }).catch(e => console.log('Silent alarm play failed, this is expected', e));
+                }
+                
+                const taskPlayPromise = taskCompleteSoundEl.play();
+                if (taskPlayPromise !== undefined) {
+                    taskPlayPromise.then(() => {
+                        taskCompleteSoundEl.pause();
+                        taskCompleteSoundEl.currentTime = 0;
+                        taskCompleteSoundEl.volume = 1.0;
+                    }).catch(e => console.log('Silent task sound play failed, this is expected', e));
+                }
+                
+                // Mark audio as initialized
+                audioInitialized = true;
+                
+                console.log("Audio successfully initialized");
+            } catch (e) {
+                console.error('Audio initialization failed:', e);
+            }
+        }
+        
+        // Reset app function
+        function resetApp() {
+            if (confirm('Bist du sicher, dass du alle Daten löschen und die App zurücksetzen möchtest?')) {
+                // Clear all data from localStorage
+                localStorage.removeItem('adhsJetztPlaner');
+                
+                // Show notification
+                showNotification('App wurde zurückgesetzt. Seite wird neu geladen...', 2000);
+                
+                // Reload the page after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        }
+        
+        // Delete All Activities function
+        function deleteAllActivities() {
+            // Try to initialize audio on user interaction
+            initializeAudio();
+            
+            if (confirm('Möchtest du wirklich alle Aktivitäten löschen?')) {
+                // Clear the activities array
+                state.activities = [];
+                
+                // Reset current task index and clear timers
+                state.currentTaskIndex = -1;
+                
+                // Clear any running task timer
+                if (taskCountdownInterval) {
+                    clearInterval(taskCountdownInterval);
+                    taskCountdownInterval = null;
+                }
+                
+                // Hide task countdown
+                taskCountdownEl.style.display = 'none';
+                
+                // Update UI
+                renderActivities();
+                updateTimeSummary();
+                saveState();
+                
+                // Show confirmation
+                showNotification('Alle Aktivitäten wurden gelöscht', 3000);
+            }
+        }
+        
+        // Task countdown timer
+        function startTaskCountdown() {
+            // Clear any existing interval
+            if (taskCountdownInterval) {
+                clearInterval(taskCountdownInterval);
+                taskCountdownInterval = null;
+            }
+            
+            // Find the first non-completed activity
+            const currentActivityIndex = state.activities.findIndex(a => !a.completed);
+            if (currentActivityIndex === -1) {
+                taskCountdownEl.style.display = 'none';
+                return; // No active tasks
+            }
+            
+            state.currentTaskIndex = currentActivityIndex;
+            const currentActivity = state.activities[currentActivityIndex];
+            
+            // Set the end time for this task if not already set
+            if (!currentActivity.endTime) {
+                const now = new Date();
+                const endTime = new Date(now.getTime() + (currentActivity.duration * 60 * 1000));
+                currentActivity.endTime = endTime;
+            }
+            
+            // Update the countdown display
+            updateTaskCountdown();
+            
+            // Show the task countdown with a brief highlight
+            taskCountdownEl.style.display = 'block';
+            taskCountdownEl.style.backgroundColor = 'var(--success)'; // Green highlight
+            setTimeout(() => {
+                taskCountdownEl.style.backgroundColor = ''; // Reset color
+            }, 1500);
+            
+            // Start the interval to update the countdown
+            taskCountdownInterval = setInterval(updateTaskCountdown, 1000);
+        }
+        
+        function updateTaskCountdown() {
+            if (state.currentTaskIndex === -1 || state.activities.length === 0) {
+                taskCountdownEl.style.display = 'none';
+                return;
+            }
+            
+            const currentActivity = state.activities[state.currentTaskIndex];
+            if (!currentActivity || currentActivity.completed) {
+                // Move to the next task if current is completed
+                const nextIndex = state.activities.findIndex(a => !a.completed);
+                if (nextIndex === -1) {
+                    taskCountdownEl.style.display = 'none';
+                    return; // No more tasks
+                }
+                
+                state.currentTaskIndex = nextIndex;
+                const nextActivity = state.activities[nextIndex];
+                
+                // Set the end time for this task
+                const now = new Date();
+                const endTime = new Date(now.getTime() + (nextActivity.duration * 60 * 1000));
+                nextActivity.endTime = endTime;
+                
+                // Highlight the transition to a new task
+                taskCountdownEl.style.backgroundColor = 'var(--success)'; // Green to indicate new task
+                setTimeout(() => {
+                    taskCountdownEl.style.backgroundColor = ''; // Reset after 2 seconds
+                }, 2000);
+                
+                // Save state to persist the endTime
+                saveState();
+                
+                // Re-render activities to update finish times
+                renderActivities();
+            }
+            
+            const activity = state.activities[state.currentTaskIndex];
+            const now = new Date();
+            const endTime = new Date(activity.endTime);
+            
+            // Calculate remaining time
+            const remainingMs = endTime - now;
+            
+            if (remainingMs <= 0) {
+                // Time's up for this task!
+                console.log("Task time up:", activity.name);
+                playTaskCompleteSound();
+                showNotification(`Zeit abgelaufen für: ${activity.name}`, 5000);
+                
+                // Auto-complete the task
+                completeActivity(activity.id, true);
+                
+                // Check if there are more tasks
+                const nextIndex = state.activities.findIndex(a => !a.completed);
+                if (nextIndex !== -1) {
+                    // Start the next task automatically
+                    state.currentTaskIndex = nextIndex;
+                    const nextActivity = state.activities[nextIndex];
+                    
+                    // Set the end time for the next task
+                    const newEndTime = new Date(now.getTime() + (nextActivity.duration * 60 * 1000));
+                    nextActivity.endTime = newEndTime;
+                    
+                    // Show notification for next task
+                    showNotification(`Nächste Aufgabe: ${nextActivity.name}`, 5000);
+                    
+                    // Save updated state
+                    saveState();
+                    
+                    // Update UI for new task
+                    renderActivities();
+                } else {
+                    // No more tasks
+                    taskCountdownEl.style.display = 'none';
+                    if (taskCountdownInterval) {
+                        clearInterval(taskCountdownInterval);
+                        taskCountdownInterval = null;
+                    }
+                    
+                    // Show all tasks complete notification
+                    showNotification('Alle Aufgaben abgeschlossen!', 5000);
+                    return;
+                }
+            }
+            
+            // Update the display with the current task and remaining time
+            const remainingMinutes = Math.floor(remainingMs / 60000);
+            const remainingSeconds = Math.floor((remainingMs % 60000) / 1000);
+            
+            // Format the finish time for display
+            const finishTime = new Date(endTime);
+            const finishTimeStr = `${finishTime.getHours().toString().padStart(2, '0')}:${finishTime.getMinutes().toString().padStart(2, '0')}`;
+            
+            // Add a "current" or "next" prefix to clearly indicate which task is active
+            const taskPrefix = activity.orderIndex === 0 ? '' : 'Aktuelle Aufgabe: ';
+            
+            taskCountdownEl.textContent = `${taskPrefix}${activity.name}: noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`;
+            
+            // Change color when less than 1 minute remains
+            if (remainingMs < 60000) {
+                taskCountdownEl.style.backgroundColor = 'var(--danger)'; // Red for urgency
+            } else {
+                taskCountdownEl.style.backgroundColor = '';
+            }
+        }
+        
+        // Improved task complete sound function
+        function playTaskCompleteSound() {
+            // Ensure audio is initialized
+            initializeAudio();
+            
+            // First try the dedicated task complete sound
+            try {
+                taskCompleteSoundEl.currentTime = 0;
+                const playPromise = taskCompleteSoundEl.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.error("Task sound playback error, using Web Audio API fallback:", error);
+                        playTaskCompleteSoundFallback();
+                    });
+                }
+            } catch (e) {
+                console.error("Error playing task complete sound:", e);
+                playTaskCompleteSoundFallback();
+            }
+        }
+        
+        // Web Audio API fallback for task complete sound
+        function playTaskCompleteSoundFallback() {
+            try {
+                if (!audioContext) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioContext = new AudioContext();
+                }
+                
+                // Create oscillator for task completion sound
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 1200; // Higher pitch for completion
+                
+                gainNode.gain.value = 0.4; // Louder than before
+                
+                oscillator.start();
+                
+                // Short beep pattern - more noticeable
+                setTimeout(() => {
+                    oscillator.frequency.value = 1400;
+                    setTimeout(() => {
+                        oscillator.frequency.value = 1600;
+                        setTimeout(() => {
+                            oscillator.frequency.value = 1200;
+                            setTimeout(() => {
+                                oscillator.stop();
+                            }, 200);
+                        }, 200);
+                    }, 200);
+                }, 200);
+            } catch (e) {
+                console.error("Web Audio API fallback error:", e);
+                // Last resort: try to vibrate
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([200, 100, 200]);
+                }
+            }
+        }
+        
+        // Activity-related functions
+        function createActivityElement(activity, index) {
+            const activityEl = document.createElement('div');
+            activityEl.className = activity.completed ? 'activity completed' : 'activity';
+            
+            // Mark as current if it's the first non-completed activity
+            if (!activity.completed && state.currentTaskIndex === index) {
+                activityEl.classList.add('current');
+            }
+            
+            activityEl.dataset.id = activity.id;
+            
+            // Calculate finish time for display
+            let finishTimeDisplay = '';
+            if (!activity.completed) {
+                if (!activity.endTime) {
+                    // If no end time set yet, calculate one from now
+                    const now = new Date();
+                    const endTime = new Date(now.getTime() + (activity.duration * 60 * 1000));
+                    finishTimeDisplay = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+                } else {
+                    // Use the saved end time
+                    const endTime = new Date(activity.endTime);
+                    finishTimeDisplay = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+                }
+            } else {
+                finishTimeDisplay = "✓";
+            }
+            
+            activityEl.innerHTML = `
+                <div class="activity-time">${finishTimeDisplay}</div>
+                <div class="activity-name">${activity.name}</div>
+                <div class="activity-duration">${activity.duration} min</div>
+                <div class="activity-actions">
+                    ${activity.completed 
+                        ? '<button class="activity-btn revert-btn" aria-label="Wiederherstellen">↺</button>'
+                        : '<button class="activity-btn complete-btn" aria-label="Erledigt">✓</button>'}
+                    <button class="activity-btn delete-btn" aria-label="Löschen">×</button>
+                </div>
+            `;
+            
+            // Add event listeners
+            const completeBtn = activityEl.querySelector('.complete-btn');
+            if (completeBtn) {
+                completeBtn.addEventListener('click', () => {
+                    // Try to initialize audio on the first user interaction
+                    initializeAudio();
+                    completeActivity(activity.id);
+                });
+            }
+            
+            const revertBtn = activityEl.querySelector('.revert-btn');
+            if (revertBtn) {
+                revertBtn.addEventListener('click', () => {
+                    revertActivity(activity.id);
+                });
+            }
+            
+            const deleteBtn = activityEl.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', () => {
+                deleteActivity(activity.id);
+            });
+            
+            return activityEl;
+        }
+        
+        function renderActivities() {
+            // Clear current list
+            activityListEl.innerHTML = '';
+            
+            if (state.activities.length === 0) {
+                activityListEl.innerHTML = '<div class="no-activities">Keine Aktivitäten geplant. Füge eine hinzu!</div>';
+                
+                // Hide task countdown when no activities
+                taskCountdownEl.style.display = 'none';
+                return;
+            }
+            
+            // Render each activity in order
+            state.activities.forEach((activity, index) => {
+                activityListEl.appendChild(createActivityElement(activity, index));
+            });
+            
+            // Start task countdown for the current task
+            startTaskCountdown();
+        }
+        
+        function addActivity() {
+            // Try to initialize audio on user interaction
+            initializeAudio();
+            
+            const activityName = activityNameEl.value.trim();
+            const activityDuration = parseInt(activityDurationEl.value);
+            
+            if (activityName && activityDuration > 0) {
+                // Get the next order index
+                const orderIndex = state.activities.length;
+                
+                // Create new activity
+                const newActivity = {
+                    id: Date.now().toString(), // Unique ID
+                    name: activityName,
+                    duration: activityDuration,
+                    orderIndex: orderIndex,
+                    completed: false
+                };
+                
+                // Calculate end time for this task
+                const now = new Date();
+                
+                // If this is the first activity or all others are completed
+                if (state.currentTaskIndex === -1) {
+                    // Set end time based on current time
+                    newActivity.endTime = new Date(now.getTime() + (activityDuration * 60 * 1000));
+                } else {
+                    // Find the last non-completed activity's end time
+                    const lastIncompleteActivity = [...state.activities]
+                        .filter(a => !a.completed)
+                        .sort((a, b) => {
+                            if (!a.endTime && !b.endTime) return 0;
+                            if (!a.endTime) return 1;
+                            if (!b.endTime) return -1;
+                            return a.endTime - b.endTime;
+                        })
+                        .pop();
+                    
+                    // If there's a last activity with an end time, use that as the start time for this one
+                    if (lastIncompleteActivity && lastIncompleteActivity.endTime) {
+                        const startTime = new Date(lastIncompleteActivity.endTime);
+                        newActivity.endTime = new Date(startTime.getTime() + (activityDuration * 60 * 1000));
+                    } else {
+                        // Fallback to current time
+                        newActivity.endTime = new Date(now.getTime() + (activityDuration * 60 * 1000));
+                    }
+                }
+                
+                // Add to state
+                state.activities.push(newActivity);
+                
+                // Update time summary
+                updateTimeSummary();
+                
+                // Reset form
+                activityNameEl.value = '';
+                addFormEl.style.display = 'none';
+                
+                // Save state
+                saveState();
+                
+                // Render activities
+                renderActivities();
+                
+                // Show success notification
+                showNotification('Aktivität hinzugefügt', 2000);
+            }
+        }
+        
+        function completeActivity(id, automated = false) {
+            const activityIndex = state.activities.findIndex(a => a.id === id);
+            if (activityIndex !== -1) {
+                state.activities[activityIndex].completed = true;
+                
+                if (!automated) {
+                    // Play completion sound only if manually completed
+                    playTaskCompleteSound();
+                    showNotification(`Aktivität erledigt: ${state.activities[activityIndex].name}`, 3000);
+                }
+                
+                // Update UI
+                renderActivities();
+                updateTimeSummary();
+                saveState();
+            }
+        }
+        
+        function revertActivity(id) {
+            const activityIndex = state.activities.findIndex(a => a.id === id);
+            if (activityIndex !== -1) {
+                state.activities[activityIndex].completed = false;
+                
+                // Reset endTime
+                delete state.activities[activityIndex].endTime;
+                
+                // Update UI
+                renderActivities();
+                updateTimeSummary();
+                saveState();
+                
+                // Show notification
+                showNotification(`Aktivität wiederhergestellt: ${state.activities[activityIndex].name}`, 2000);
+            }
+        }
+        
+        function deleteActivity(id) {
+            const activityIndex = state.activities.findIndex(a => a.id === id);
+            if (activityIndex !== -1) {
+                const activityName = state.activities[activityIndex].name;
+                
+                // Remove the activity
+                state.activities.splice(activityIndex, 1);
+                
+                // Update order indices
+                state.activities.forEach((activity, index) => {
+                    activity.orderIndex = index;
+                });
+                
+                // Reset current task index and find the next non-completed task
+                state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
+                
+                // Update UI
+                renderActivities();
+                updateTimeSummary();
+                saveState();
+                
+                // Show notification
+                showNotification(`Aktivität gelöscht: ${activityName}`, 2000);
+            }
+        }
+        
+        // Time management functions
+        function updateTimeDisplay() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            currentTimeEl.textContent = `${hours}:${minutes}`;
+        }
+        
+        function updateTimeSummary() {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const departureMinutes = timeStringToMinutes(state.departureTime);
+            
+            // Available time
+            let availableTime = departureMinutes - currentMinutes;
+            if (availableTime < 0) availableTime = 0;
+            
+            // Planned time (sum of non-completed activities durations)
+            const plannedTime = state.activities
+                .filter(a => !a.completed)
+                .reduce((total, activity) => total + parseInt(activity.duration), 0);
+            
+            // Buffer time
+            const bufferTime = Math.max(0, availableTime - plannedTime);
+            
+            // Update display
+            availableTimeEl.textContent = formatTimeValue(availableTime);
+            plannedTimeEl.textContent = formatTimeValue(plannedTime);
+            bufferTimeEl.textContent = formatTimeValue(bufferTime);
+            
+            // Update buffer time color
+            if (bufferTime < 10) {
+                bufferTimeEl.classList.add('danger');
+                bufferTimeEl.classList.remove('warning');
+            } else if (bufferTime < 30) {
+                bufferTimeEl.classList.add('warning');
+                bufferTimeEl.classList.remove('danger');
+            } else {
+                bufferTimeEl.classList.remove('warning');
+                bufferTimeEl.classList.remove('danger');
+            }
+            
+            // Update countdown
+            if (availableTime <= 0) {
+                countdownEl.textContent = 'Zeit zum Ausgehen!';
+                document.querySelector('.countdown-section').style.background = 'linear-gradient(135deg, var(--danger), #c0392b)';
+            } else {
+                countdownEl.textContent = `Du musst in ${formatTimeSpan(availableTime)} rausgehen`;
+                document.querySelector('.countdown-section').style.background = '';
+            }
+        }
+        
+        // Settings functions
+        function saveSettings() {
+            // Try to initialize audio on user interaction
+            initializeAudio();
+            
+            state.departureTime = departureTimeEl.value;
+            state.alarm.enabled = alarmToggleEl.checked;
+            state.alarm.time = parseInt(alarmTimeEl.value);
+            
+            saveState();
+            
+            // Update UI
+            updateTimeSummary();
+            
+            // Schedule alarm with new settings
+            if (alarmTimeout) {
+                clearTimeout(alarmTimeout);
+                alarmTimeout = null;
+            }
+            
+            if (state.alarm.enabled) {
+                scheduleAlarm();
+            }
+            
+            // Show confirmation
+            showNotification('Einstellungen gespeichert', 2000);
+        }
+        
+        // Improved alarm function with multiple fallbacks
+        function playAlarm() {
+            console.log("Attempting to play alarm sound");
+            
+            // Ensure audio is initialized
+            initializeAudio();
+            
+            // Try to vibrate the device if possible (for mobile)
+            if ('vibrate' in navigator) {
+                navigator.vibrate([500, 200, 500, 200, 500]);
+            }
+            
+            // First try the dedicated alarm sound
+            try {
+                alarmSoundEl.currentTime = 0;
+                alarmSoundEl.loop = true; // Make it loop for more attention
+                
+                const playPromise = alarmSoundEl.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        // Stop after 5 seconds
+                        setTimeout(() => {
+                            alarmSoundEl.pause();
+                            alarmSoundEl.currentTime = 0;
+                            alarmSoundEl.loop = false;
+                        }, 5000);
+                    }).catch(error => {
+                        console.error("Alarm sound playback error, using Web Audio API fallback:", error);
+                        playAlarmFallback();
+                    });
+                }
+            } catch (e) {
+                console.error("Error playing alarm sound:", e);
+                playAlarmFallback();
+            }
+        }
+        
+        // Web Audio API fallback for alarm
+        function playAlarmFallback() {
+            try {
+                if (!audioContext) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioContext = new AudioContext();
+                }
+                
+                // Create oscillators for alarm sound (two tones)
+                const oscillator1 = audioContext.createOscillator();
+                const oscillator2 = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator1.connect(gainNode);
+                oscillator2.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator1.type = 'square'; // More attention-getting than sine
+                oscillator1.frequency.value = 800;
+                oscillator2.type = 'square';
+                oscillator2.frequency.value = 600;
+                
+                gainNode.gain.value = 0.4; // Louder than before
+                
+                oscillator1.start();
+                oscillator2.start();
+                
+                // Complex beep pattern for more attention
+                let count = 0;
+                const interval = setInterval(() => {
+                    if (count % 2 === 0) {
+                        gainNode.gain.value = 0.4;
+                        oscillator1.frequency.value = 800;
+                        oscillator2.frequency.value = 600;
+                    } else {
+                        gainNode.gain.value = 0.2;
+                        oscillator1.frequency.value = 700;
+                        oscillator2.frequency.value = 500;
+                    }
+                    
+                    count++;
+                    if (count > 10) {
+                        clearInterval(interval);
+                        oscillator1.stop();
+                        oscillator2.stop();
+                    }
+                }, 300);
+            } catch (e) {
+                console.error("Web Audio API fallback error:", e);
+                // Last resort: try to alert
+                alert(`ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
+            }
+        }
+        
+        // Schedule alarm
+        function scheduleAlarm() {
+            console.log("Scheduling alarm");
+            
+            if (!state.alarm.enabled) {
+                console.log("Alarm disabled, not scheduling");
+                return;
+            }
+            
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const departureMinutes = timeStringToMinutes(state.departureTime);
+            
+            // Calculate time until alarm should trigger (departure time - alarm minutes)
+            const alarmMinutes = departureMinutes - state.alarm.time;
+            let timeUntilAlarm = alarmMinutes - currentMinutes;
+            
+            // If alarm time is in the past, don't schedule
+            if (timeUntilAlarm <= 0) {
+                console.log("Alarm time in past, not scheduling");
+                return;
+            }
+            
+            console.log(`Alarm scheduled for ${timeUntilAlarm} minutes from now`);
+            
+            // Clear any existing alarm
+            if (alarmTimeout) {
+                clearTimeout(alarmTimeout);
+            }
+            
+            // Schedule alarm
+            alarmTimeout = setTimeout(() => {
+                console.log("Alarm triggered!");
+                playAlarm();
+                showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`, 10000);
+            }, timeUntilAlarm * 60 * 1000);
+        }
+        
+        function showNotification(message, duration = 5000) {
+            // In-app notification
+            notificationEl.textContent = message;
+            notificationEl.classList.add('show');
+            
+            // Clear any existing timeout
+            if (notificationTimeout) {
+                clearTimeout(notificationTimeout);
+            }
+            
+            // Hide notification after specified duration (default 5 seconds)
+            notificationTimeout = setTimeout(() => {
+                notificationEl.classList.remove('show');
+            }, duration);
+            
+            // Try to show a system notification for lock screens (if permission granted)
+            try {
+                // Check if we have notification permission and service worker is supported
+                if ('Notification' in window && 'serviceWorker' in navigator) {
+                    if (Notification.permission === 'granted') {
+                        // Show notification
+                        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                            navigator.serviceWorker.ready.then(registration => {
+                                registration.showNotification('ADHS Jetzt-Planer', {
+                                    body: message,
+                                    vibrate: [200, 100, 200],
+                                    tag: 'adhs-planer-notification',
+                                    renotify: true
+                                });
+                            });
+                        } else {
+                            // Fallback to basic notification if service worker not active
+                            new Notification('ADHS Jetzt-Planer', {
+                                body: message
+                            });
+                        }
+                    } else if (Notification.permission !== 'denied') {
+                        // We need to ask for permission
+                        Notification.requestPermission().then(permission => {
+                            if (permission === 'granted') {
+                                new Notification('ADHS Jetzt-Planer', {
+                                    body: message
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.log('System notification failed:', e);
+                // Fall back to in-app notification only (already handled above)
+            }
+        }
+        
+        // Utility functions
+        function timeStringToMinutes(timeString) {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        function formatTimeValue(minutes) {
+            if (minutes < 60) {
+                return `${minutes} Min`;
+            } else {
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                return `${hours}:${mins.toString().padStart(2, '0')} Std`;
+            }
+        }
+        
+        function formatTimeSpan(minutes) {
+            if (minutes < 60) {
+                return `${minutes} Minuten`;
+            } else {
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                
+                let result = `${hours} Stunde${hours !== 1 ? 'n' : ''}`;
+                if (mins > 0) {
+                    result += ` ${mins} Minute${mins !== 1 ? 'n' : ''}`;
+                }
+                
+                return result;
+            }
+        }
+        
+        // Storage functions
+        function saveState() {
+            try {
+                localStorage.setItem('adhsJetztPlaner', JSON.stringify(state));
+            } catch (e) {
+                console.log('localStorage not available:', e);
+            }
+        }
+        
+        function loadState() {
+            try {
+                const savedState = localStorage.getItem('adhsJetztPlaner');
+                if (savedState) {
+                    // Parse saved state
+                    const parsedState = JSON.parse(savedState);
+                    
+                    // Make sure activities is an array
+                    if (!Array.isArray(parsedState.activities)) {
+                        parsedState.activities = [];
+                    }
+                    
+                    // Convert date strings back to Date objects
+                    parsedState.activities.forEach(activity => {
+                        if (activity.endTime) {
+                            activity.endTime = new Date(activity.endTime);
+                        }
+                    });
+                    
+                    // Use the parsed state
+                    state = parsedState;
+                    
+                    // Handle older versions of state
+                    if (state.currentTaskIndex === undefined) {
+                        state.currentTaskIndex = -1;
+                    }
+                    
+                    // Validate current task index
+                    if (state.currentTaskIndex >= state.activities.length) {
+                        state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
+                    }
+                }
+            } catch (e) {
+                console.log('Error loading from localStorage:', e);
+                // If there's an error, reset to defaults
+                state = {
+                    activities: [],
+                    departureTime: '14:30',
+                    alarm: {
+                        enabled: true,
+                        time: 15
+                    },
+                    currentTaskIndex: -1
+                };
+            }
+        }
+        
+        // Register service worker for PWA support
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            }
+        }
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Register service worker
+                registerServiceWorker();
+                
+                // Load saved state
+                loadState();
+                
+                // Initialize UI
+                departureTimeEl.value = state.departureTime;
+                alarmToggleEl.checked = state.alarm.enabled;
+                alarmTimeEl.value = state.alarm.time;
+                
+                // Show/hide alarm options based on toggle state
+                if (state.alarm.enabled) {
+                    alarmOptionsEl.classList.add('visible');
+                } else {
+                    alarmOptionsEl.classList.remove('visible');
+                }
+                
+                // Find current task index if not set
+                if (state.currentTaskIndex === -1) {
+                    state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
+                }
+                
+                // Render activities
+                renderActivities();
+                
+                // Set up update intervals
+                updateTimeDisplay();
+                updateTimeSummary();
+                setInterval(updateTimeDisplay, 10000); // Update time every 10 seconds
+                setInterval(updateTimeSummary, 30000); // Update summary every 30 seconds
+                
+                // Set up alarm if enabled
+                if (state.alarm.enabled) {
+                    scheduleAlarm();
+                }
+                
+                // Event listeners
+                document.getElementById('show-add-form').addEventListener('click', function() {
+                    // Try to initialize audio on user interaction
+                    initializeAudio();
+                    
+                    addFormEl.style.display = 'block';
+                    activityNameEl.focus();
+                });
+                
+                document.getElementById('cancel-add').addEventListener('click', function() {
+                    addFormEl.style.display = 'none';
+                    activityNameEl.value = '';
+                });
+                
+                document.getElementById('add-activity-btn').addEventListener('click', addActivity);
+                document.getElementById('delete-all-btn').addEventListener('click', deleteAllActivities);
+                document.getElementById('save-departure').addEventListener('click', saveSettings);
+                document.getElementById('reset-app').addEventListener('click', resetApp);
+                
+                alarmToggleEl.addEventListener('change', function() {
+                    // Try to initialize audio on user interaction
+                    initializeAudio();
+                    
+                    state.alarm.enabled = this.checked;
+                    
+                    if (this.checked) {
+                        alarmOptionsEl.classList.add('visible');
+                    } else {
+                        alarmOptionsEl.classList.remove('visible');
+                    }
+                    
+                    // Clear any existing alarms
+                    if (alarmTimeout) {
+                        clearTimeout(alarmTimeout);
+                        alarmTimeout = null;
+                    }
+                    
+                    // Schedule new alarm if enabled
+                    if (state.alarm.enabled) {
+                        scheduleAlarm();
+                    }
+                    
+                    saveState();
+                });
+                
+                alarmTimeEl.addEventListener('change', function() {
+                    // Try to initialize audio on user interaction
+                    initializeAudio();
+                    
+                    state.alarm.time = parseInt(this.value);
+                    
+                    // Clear any existing alarms
+                    if (alarmTimeout) {
+                        clearTimeout(alarmTimeout);
+                        alarmTimeout = null;
+                    }
+                    
+                    // Schedule new alarm if enabled
+                    if (state.alarm.enabled) {
+                        scheduleAlarm();
+                    }
+                    
+                    saveState();
+                });
+                
+                document.getElementById('test-alarm').addEventListener('click', function() {
+                    // Initialize audio and play alarm
+                    initializeAudio();
+                    playAlarm();
+                    showNotification('Alarm Test!', 3000);
+                });
+                
+                // Add activity on Enter key in fields
+                activityNameEl.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        addActivity();
+                    }
+                });
+                
+                activityDurationEl.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        addActivity();
+                    }
+                });
+                
+                // Add visual feedback to all buttons
+                document.querySelectorAll('.btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        this.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            this.style.transform = '';
+                        }, 100);
+                    });
+                });
+                
+                // Listen for visibility change to handle when app comes back into focus
+                document.addEventListener('visibilitychange', function() {
+                    if (!document.hidden) {
+                        // App is visible again, update everything
+                        updateTimeDisplay();
+                        updateTimeSummary();
+                        
+                        // Check if we need to restart task countdown
+                        if (!taskCountdownInterval && state.activities.some(a => !a.completed)) {
+                            startTaskCountdown();
+                        }
+                    }
+                });
+                
+                // Preload audio elements
+                alarmSoundEl.load();
+                taskCompleteSoundEl.load();
+                
+                // Try to initialize audio right away with a user gesture if possible
+                document.addEventListener('click', function initAudioOnFirstClick() {
+                    initializeAudio();
+                    document.removeEventListener('click', initAudioOnFirstClick);
+                }, { once: true });
+                
+            } catch (e) {
+                console.error("Error initializing app:", e);
+                showNotification("Es gab ein Problem beim Starten der App. Bitte laden Sie die Seite neu.", 5000);
+            }
+        });
+    </script>
+</body>
+</html>
