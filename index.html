@@ -411,6 +411,11 @@
             gap: 8px;
         }
         
+        .delete-all-btn {
+            background-color: #CD5C5C;
+            margin-top: 10px;
+        }
+        
         .reset-icon {
             font-size: 1.2rem;
         }
@@ -526,10 +531,16 @@
             <button class="save-btn" id="save-departure">Einstellungen speichern</button>
         </div>
         
-        <!-- New Reset Container -->
+        <!-- Bottom buttons container -->
         <div class="reset-container">
-            <button class="reset-btn" id="reset-app">
-                <span class="reset-icon">↺</span> Daten löschen / App zurücksetzen
+            <!-- Delete All Activities button moved to bottom -->
+            <button class="reset-btn delete-all-btn" id="delete-all-btn">
+                <span class="reset-icon">🗑️</span> Alle Aktivitäten löschen
+            </button>
+            
+            <!-- Reset App button -->
+            <button class="reset-btn" id="reset-app" style="margin-top: 10px;">
+                <span class="reset-icon">↺</span> App zurücksetzen
             </button>
         </div>
     </div>
@@ -623,9 +634,8 @@
             }
         }
         
-        // Task countdown timer - improved for mobile compatibility
+        // Task countdown timer
         function startTaskCountdown() {
-            console.log("Starting task countdown");
             // Clear any existing interval
             if (taskCountdownInterval) {
                 clearInterval(taskCountdownInterval);
@@ -634,27 +644,19 @@
             
             // Find the first non-completed activity
             const currentActivityIndex = state.activities.findIndex(a => !a.completed);
-            console.log("Current activity index:", currentActivityIndex);
-            
             if (currentActivityIndex === -1) {
-                console.log("No active tasks found");
                 taskCountdownEl.style.display = 'none';
                 return; // No active tasks
             }
             
             state.currentTaskIndex = currentActivityIndex;
             const currentActivity = state.activities[currentActivityIndex];
-            console.log("Current activity:", currentActivity.name);
             
             // Set the end time for this task if not already set
             if (!currentActivity.endTime) {
                 const now = new Date();
                 const endTime = new Date(now.getTime() + (currentActivity.duration * 60 * 1000));
                 currentActivity.endTime = endTime;
-                console.log("Setting end time for task:", endTime);
-                
-                // Save state to persist the end time
-                saveState();
             }
             
             // Update the countdown display
@@ -667,50 +669,27 @@
                 taskCountdownEl.style.backgroundColor = ''; // Reset color
             }, 1500);
             
-            // Start the interval to update the countdown - use more frequent updates
+            // Start the interval to update the countdown
             taskCountdownInterval = setInterval(updateTaskCountdown, 1000);
-            
-            // Force immediate mobile screen update
-            setTimeout(updateTaskCountdown, 100);
         }
         
         function updateTaskCountdown() {
-            console.log("Updating task countdown");
             if (state.currentTaskIndex === -1 || state.activities.length === 0) {
-                console.log("No current task, hiding countdown");
                 taskCountdownEl.style.display = 'none';
                 return;
             }
             
-            // Double-check that the current task index is valid
-            if (state.currentTaskIndex >= state.activities.length) {
-                console.log("Invalid current task index, finding new one");
-                state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
-                if (state.currentTaskIndex === -1) {
-                    console.log("No incomplete tasks found");
-                    taskCountdownEl.style.display = 'none';
-                    return;
-                }
-            }
-            
             const currentActivity = state.activities[state.currentTaskIndex];
             if (!currentActivity || currentActivity.completed) {
-                console.log("Current activity completed, moving to next");
                 // Move to the next task if current is completed
                 const nextIndex = state.activities.findIndex(a => !a.completed);
                 if (nextIndex === -1) {
-                    console.log("No more incomplete tasks");
                     taskCountdownEl.style.display = 'none';
-                    if (taskCountdownInterval) {
-                        clearInterval(taskCountdownInterval);
-                        taskCountdownInterval = null;
-                    }
                     return; // No more tasks
                 }
                 
                 state.currentTaskIndex = nextIndex;
                 const nextActivity = state.activities[nextIndex];
-                console.log("Next activity:", nextActivity.name);
                 
                 // Set the end time for this task
                 const now = new Date();
@@ -732,42 +711,16 @@
             
             const activity = state.activities[state.currentTaskIndex];
             const now = new Date();
-            
-            // Ensure endTime is a proper Date object
-            let endTime;
-            if (typeof activity.endTime === 'string') {
-                endTime = new Date(activity.endTime);
-            } else if (activity.endTime instanceof Date) {
-                endTime = activity.endTime;
-            } else {
-                // If no valid end time, create one now
-                console.log("Creating new end time for task");
-                endTime = new Date(now.getTime() + (activity.duration * 60 * 1000));
-                activity.endTime = endTime;
-                saveState();
-            }
+            const endTime = new Date(activity.endTime);
             
             // Calculate remaining time
             const remainingMs = endTime - now;
-            console.log("Remaining ms:", remainingMs, "for task:", activity.name);
             
             if (remainingMs <= 0) {
                 // Time's up for this task!
                 console.log("Task time up:", activity.name);
                 playTaskCompleteSound();
                 showNotification(`Zeit abgelaufen für: ${activity.name}`, 5000);
-                
-                // Try to show notification but don't break app if it fails
-                try {
-                    if (isNotificationSupported() && Notification.permission === 'granted') {
-                        new Notification('Aufgabe abgeschlossen!', {
-                            body: `${activity.name} ist fertig!`,
-                            tag: 'task-complete'
-                        });
-                    }
-                } catch (e) {
-                    console.error('Failed to show task completion notification:', e);
-                }
                 
                 // Auto-complete the task
                 completeActivity(activity.id, true);
@@ -803,36 +756,26 @@
                     showNotification('Alle Aufgaben abgeschlossen!', 5000);
                     return;
                 }
+            }
+            
+            // Update the display with the current task and remaining time
+            const remainingMinutes = Math.floor(remainingMs / 60000);
+            const remainingSeconds = Math.floor((remainingMs % 60000) / 1000);
+            
+            // Format the finish time for display
+            const finishTime = new Date(endTime);
+            const finishTimeStr = `${finishTime.getHours().toString().padStart(2, '0')}:${finishTime.getMinutes().toString().padStart(2, '0')}`;
+            
+            // Add a "current" or "next" prefix to clearly indicate which task is active
+            const taskPrefix = activity.orderIndex === 0 ? '' : 'Aktuelle Aufgabe: ';
+            
+            taskCountdownEl.textContent = `${taskPrefix}${activity.name}: noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`;
+            
+            // Change color when less than 1 minute remains
+            if (remainingMs < 60000) {
+                taskCountdownEl.style.backgroundColor = '#FF4136'; // Bright red for urgency
             } else {
-                // Update the display with the current task and remaining time
-                const remainingMinutes = Math.floor(remainingMs / 60000);
-                const remainingSeconds = Math.floor((remainingMs % 60000) / 1000);
-                
-                // Format the finish time for display
-                const finishTime = new Date(endTime);
-                const finishTimeStr = `${finishTime.getHours().toString().padStart(2, '0')}:${finishTime.getMinutes().toString().padStart(2, '0')}`;
-                
-                // Add a "current" or "next" prefix to clearly indicate which task is active
-                const taskPrefix = activity.orderIndex === 0 ? '' : 'Aktuelle Aufgabe: ';
-                
-                taskCountdownEl.textContent = `${taskPrefix}${activity.name}: noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`;
-                
-                // Try to update notification on lock screen every minute (not critical for app function)
-                try {
-                    if ((remainingSeconds === 0 || remainingMs <= 60000) && isNotificationSupported()) {
-                        updateTaskNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr);
-                    }
-                } catch (e) {
-                    console.error('Error updating notification:', e);
-                    // Continue even if notification fails
-                }
-                
-                // Change color when less than 1 minute remains
-                if (remainingMs < 60000) {
-                    taskCountdownEl.style.backgroundColor = '#FF4136'; // Bright red for urgency
-                } else {
-                    taskCountdownEl.style.backgroundColor = '';
-                }
+                taskCountdownEl.style.backgroundColor = '';
             }
         }
         
@@ -990,8 +933,6 @@
             const activityDuration = parseInt(activityDurationEl.value);
             
             if (activityName && activityDuration > 0) {
-                console.log("Adding new activity:", activityName, "duration:", activityDuration);
-                
                 // Get the next order index
                 const orderIndex = state.activities.length;
                 
@@ -1011,7 +952,6 @@
                 if (state.currentTaskIndex === -1) {
                     // Set end time based on current time
                     newActivity.endTime = new Date(now.getTime() + (activityDuration * 60 * 1000));
-                    console.log("Setting end time for first task:", newActivity.endTime);
                 } else {
                     // Find the last non-completed activity's end time
                     const lastIncompleteActivity = [...state.activities]
@@ -1028,11 +968,9 @@
                     if (lastIncompleteActivity && lastIncompleteActivity.endTime) {
                         const startTime = new Date(lastIncompleteActivity.endTime);
                         newActivity.endTime = new Date(startTime.getTime() + (activityDuration * 60 * 1000));
-                        console.log("Setting end time based on last activity:", newActivity.endTime);
                     } else {
                         // Fallback to current time
                         newActivity.endTime = new Date(now.getTime() + (activityDuration * 60 * 1000));
-                        console.log("Setting end time based on current time:", newActivity.endTime);
                     }
                 }
                 
@@ -1051,12 +989,6 @@
                 
                 // Render activities
                 renderActivities();
-                
-                // Force immediate update
-                if (taskCountdownInterval === null && state.activities.length > 0) {
-                    console.log("Starting task countdown after adding activity");
-                    startTaskCountdown();
-                }
             }
         }
         
@@ -1309,18 +1241,6 @@
                 console.log("Alarm triggered!");
                 playAlarm();
                 showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`, 10000);
-                
-                // Try to show system notification but don't break app if it fails
-                try {
-                    if (isNotificationSupported() && Notification.permission === 'granted') {
-                        new Notification('Zeit zum Ausgehen!', {
-                            body: `In ${state.alarm.time} Minuten musst du rausgehen!`,
-                            tag: 'departure-alarm'
-                        });
-                    }
-                } catch (e) {
-                    console.error('Failed to show departure notification:', e);
-                }
             }, timeUntilAlarm * 60 * 1000);
         }
         
@@ -1427,106 +1347,9 @@
             }
         }
         
-        // Notification functions - with robust error handling
-        let notificationPermissionRequested = false;
-        let taskNotification = null;
-        
-        function isNotificationSupported() {
-            return 'Notification' in window && 'serviceWorker' in navigator;
-        }
-        
-        function requestNotificationPermission() {
-            if (!isNotificationSupported()) {
-                showNotification('Benachrichtigungen werden auf diesem Gerät nicht unterstützt.', 3000);
-                return Promise.resolve(false);
-            }
-            
-            if (Notification.permission === 'granted') {
-                showNotification('Benachrichtigungen sind bereits aktiviert!', 3000);
-                return Promise.resolve(true);
-            }
-            
-            if (Notification.permission === 'denied') {
-                showNotification('Benachrichtigungen wurden blockiert. Bitte ändere die Einstellungen deines Browsers.', 5000);
-                return Promise.resolve(false);
-            }
-            
-            notificationPermissionRequested = true;
-            
-            try {
-                return Notification.requestPermission()
-                    .then(permission => {
-                        if (permission === 'granted') {
-                            showNotification('Benachrichtigungen aktiviert!', 3000);
-                            return true;
-                        } else {
-                            showNotification('Benachrichtigungen wurden nicht erlaubt.', 3000);
-                            return false;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error requesting notification permission:', error);
-                        return false;
-                    });
-            } catch (e) {
-                console.error('Error in requestNotificationPermission:', e);
-                return Promise.resolve(false);
-            }
-        }
-        
-        function sendTaskNotification(title, options) {
-            try {
-                // Simple check if notifications are supported and allowed
-                if (!isNotificationSupported() || Notification.permission !== 'granted') {
-                    return;
-                }
-                
-                // Try to create a simple notification
-                new Notification(title, options);
-            } catch (e) {
-                console.error('Failed to create notification:', e);
-            }
-        }
-        
-        function updateTaskNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr) {
-            try {
-                if (!isNotificationSupported() || Notification.permission !== 'granted') {
-                    return;
-                }
-                
-                const title = `${activity.name}`;
-                const options = {
-                    body: `Noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`,
-                    tag: 'current-task'
-                };
-                
-                // Send the notification
-                sendTaskNotification(title, options);
-            } catch (e) {
-                console.error('Error in updateTaskNotification:', e);
-                // Errors here shouldn't affect the core app functionality
-            }
-        }
-        
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
             try {
-                // Try to register service worker but don't halt app if it fails
-                if ('serviceWorker' in navigator) {
-                    try {
-                        navigator.serviceWorker.register('service-worker.js')
-                            .then(registration => {
-                                console.log('Service Worker registered');
-                            })
-                            .catch(error => {
-                                console.error('Service Worker registration failed, continuing without notifications');
-                            });
-                    } catch (e) {
-                        console.error('Error setting up service worker:', e);
-                        // Continue app initialization even if service worker fails
-                    }
-                }
-                
                 // Load saved state
                 loadState();
                 
@@ -1559,19 +1382,6 @@
                 // Set up alarm if enabled
                 scheduleAlarm();
                 
-                // Request notification permission after a short delay - only if supported
-                setTimeout(() => {
-                    try {
-                        if (isNotificationSupported() && !notificationPermissionRequested && state.activities.length > 0) {
-                            // Just check if we might need to request permissions, but don't actually do it
-                            // Let the user explicitly request via button instead
-                            console.log("Notification permission may be needed for lock screen updates");
-                        }
-                    } catch (e) {
-                        console.error("Error checking notification status:", e);
-                    }
-                }, 3000);
-                
                 // Event listeners
                 document.getElementById('show-add-form').addEventListener('click', function() {
                     addFormEl.style.display = 'block';
@@ -1587,20 +1397,6 @@
                 document.getElementById('delete-all-btn').addEventListener('click', deleteAllActivities);
                 document.getElementById('save-departure').addEventListener('click', saveSettings);
                 document.getElementById('reset-app').addEventListener('click', resetApp);
-                
-                // Set notification button visibility based on browser support
-                const resetContainer = document.querySelector('.reset-container');
-                
-                // Only show notification button if the browser supports it
-                if (isNotificationSupported()) {
-                    const notificationBtn = document.createElement('button');
-                    notificationBtn.className = 'reset-btn';
-                    notificationBtn.style.marginTop = '10px';
-                    notificationBtn.style.backgroundColor = '#6B8E23';
-                    notificationBtn.innerHTML = '<span class="reset-icon">🔔</span> Benachrichtigungen aktivieren';
-                    notificationBtn.addEventListener('click', requestNotificationPermission);
-                    resetContainer.appendChild(notificationBtn);
-                }
                 
                 alarmToggleEl.addEventListener('change', function() {
                     state.alarm.enabled = this.checked;
