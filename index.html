@@ -656,33 +656,6 @@
             transform: scale(0.98);
         }
         
-        .reset-btn {
-            background-color: #757575;
-            color: white;
-            padding: var(--space-md);
-            border: none;
-            border-radius: var(--radius-md);
-            font-family: inherit;
-            font-weight: 600;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--space-sm);
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .reset-btn:hover {
-            background-color: #616161;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .reset-btn:active {
-            transform: scale(0.98);
-        }
-        
         /* Notification */
         .notification {
             position: fixed;
@@ -840,10 +813,6 @@
             <button class="danger-btn" id="delete-all-btn">
                 <span class="icon">🗑️</span> Alle Aktivitäten löschen
             </button>
-            
-            <button class="reset-btn" id="reset-app">
-                <span class="icon">↺</span> Daten löschen / App zurücksetzen
-            </button>
         </div>
     </div>
     
@@ -952,22 +921,6 @@
                 console.log("Audio successfully initialized");
             } catch (e) {
                 console.error('Audio initialization failed:', e);
-            }
-        }
-        
-        // Reset app function
-        function resetApp() {
-            if (confirm('Bist du sicher, dass du alle Daten löschen und die App zurücksetzen möchtest?')) {
-                // Clear all data from localStorage
-                localStorage.removeItem('adhsJetztPlaner');
-                
-                // Show notification
-                showNotification('App wurde zurückgesetzt. Seite wird neu geladen...', 2000);
-                
-                // Reload the page after a short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
             }
         }
         
@@ -1860,7 +1813,6 @@
                 document.getElementById('add-activity-btn').addEventListener('click', addActivity);
                 document.getElementById('delete-all-btn').addEventListener('click', deleteAllActivities);
                 document.getElementById('save-departure').addEventListener('click', saveSettings);
-                document.getElementById('reset-app').addEventListener('click', resetApp);
                 
                 alarmToggleEl.addEventListener('change', function() {
                     // Try to initialize audio on user interaction
