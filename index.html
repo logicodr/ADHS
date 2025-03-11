@@ -471,7 +471,6 @@
             <h2>Meine Aktivitäten</h2>
             <div style="display: flex; gap: 8px;">
                 <button class="add-btn" id="show-add-form">+ Aktivität</button>
-                <button class="add-btn" id="delete-all-btn" style="background-color: #CD5C5C;">Alle löschen</button>
             </div>
         </div>
         
@@ -624,8 +623,9 @@
             }
         }
         
-        // Task countdown timer
+        // Task countdown timer - improved for mobile compatibility
         function startTaskCountdown() {
+            console.log("Starting task countdown");
             // Clear any existing interval
             if (taskCountdownInterval) {
                 clearInterval(taskCountdownInterval);
@@ -634,19 +634,27 @@
             
             // Find the first non-completed activity
             const currentActivityIndex = state.activities.findIndex(a => !a.completed);
+            console.log("Current activity index:", currentActivityIndex);
+            
             if (currentActivityIndex === -1) {
+                console.log("No active tasks found");
                 taskCountdownEl.style.display = 'none';
                 return; // No active tasks
             }
             
             state.currentTaskIndex = currentActivityIndex;
             const currentActivity = state.activities[currentActivityIndex];
+            console.log("Current activity:", currentActivity.name);
             
             // Set the end time for this task if not already set
             if (!currentActivity.endTime) {
                 const now = new Date();
                 const endTime = new Date(now.getTime() + (currentActivity.duration * 60 * 1000));
                 currentActivity.endTime = endTime;
+                console.log("Setting end time for task:", endTime);
+                
+                // Save state to persist the end time
+                saveState();
             }
             
             // Update the countdown display
@@ -659,27 +667,50 @@
                 taskCountdownEl.style.backgroundColor = ''; // Reset color
             }, 1500);
             
-            // Start the interval to update the countdown
+            // Start the interval to update the countdown - use more frequent updates
             taskCountdownInterval = setInterval(updateTaskCountdown, 1000);
+            
+            // Force immediate mobile screen update
+            setTimeout(updateTaskCountdown, 100);
         }
         
         function updateTaskCountdown() {
+            console.log("Updating task countdown");
             if (state.currentTaskIndex === -1 || state.activities.length === 0) {
+                console.log("No current task, hiding countdown");
                 taskCountdownEl.style.display = 'none';
                 return;
             }
             
+            // Double-check that the current task index is valid
+            if (state.currentTaskIndex >= state.activities.length) {
+                console.log("Invalid current task index, finding new one");
+                state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
+                if (state.currentTaskIndex === -1) {
+                    console.log("No incomplete tasks found");
+                    taskCountdownEl.style.display = 'none';
+                    return;
+                }
+            }
+            
             const currentActivity = state.activities[state.currentTaskIndex];
             if (!currentActivity || currentActivity.completed) {
+                console.log("Current activity completed, moving to next");
                 // Move to the next task if current is completed
                 const nextIndex = state.activities.findIndex(a => !a.completed);
                 if (nextIndex === -1) {
+                    console.log("No more incomplete tasks");
                     taskCountdownEl.style.display = 'none';
+                    if (taskCountdownInterval) {
+                        clearInterval(taskCountdownInterval);
+                        taskCountdownInterval = null;
+                    }
                     return; // No more tasks
                 }
                 
                 state.currentTaskIndex = nextIndex;
                 const nextActivity = state.activities[nextIndex];
+                console.log("Next activity:", nextActivity.name);
                 
                 // Set the end time for this task
                 const now = new Date();
@@ -701,10 +732,24 @@
             
             const activity = state.activities[state.currentTaskIndex];
             const now = new Date();
-            const endTime = new Date(activity.endTime);
+            
+            // Ensure endTime is a proper Date object
+            let endTime;
+            if (typeof activity.endTime === 'string') {
+                endTime = new Date(activity.endTime);
+            } else if (activity.endTime instanceof Date) {
+                endTime = activity.endTime;
+            } else {
+                // If no valid end time, create one now
+                console.log("Creating new end time for task");
+                endTime = new Date(now.getTime() + (activity.duration * 60 * 1000));
+                activity.endTime = endTime;
+                saveState();
+            }
             
             // Calculate remaining time
             const remainingMs = endTime - now;
+            console.log("Remaining ms:", remainingMs, "for task:", activity.name);
             
             if (remainingMs <= 0) {
                 // Time's up for this task!
@@ -758,36 +803,36 @@
                     showNotification('Alle Aufgaben abgeschlossen!', 5000);
                     return;
                 }
-            }
-            
-            // Update the display with the current task and remaining time
-            const remainingMinutes = Math.floor(remainingMs / 60000);
-            const remainingSeconds = Math.floor((remainingMs % 60000) / 1000);
-            
-            // Format the finish time for display
-            const finishTime = new Date(endTime);
-            const finishTimeStr = `${finishTime.getHours().toString().padStart(2, '0')}:${finishTime.getMinutes().toString().padStart(2, '0')}`;
-            
-            // Add a "current" or "next" prefix to clearly indicate which task is active
-            const taskPrefix = activity.orderIndex === 0 ? '' : 'Aktuelle Aufgabe: ';
-            
-            taskCountdownEl.textContent = `${taskPrefix}${activity.name}: noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`;
-            
-            // Try to update notification on lock screen every minute (not critical for app function)
-            try {
-                if ((remainingSeconds === 0 || remainingMs <= 60000) && isNotificationSupported()) {
-                    updateTaskNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr);
-                }
-            } catch (e) {
-                console.error('Error updating notification:', e);
-                // Continue even if notification fails
-            }
-            
-            // Change color when less than 1 minute remains
-            if (remainingMs < 60000) {
-                taskCountdownEl.style.backgroundColor = '#FF4136'; // Bright red for urgency
             } else {
-                taskCountdownEl.style.backgroundColor = '';
+                // Update the display with the current task and remaining time
+                const remainingMinutes = Math.floor(remainingMs / 60000);
+                const remainingSeconds = Math.floor((remainingMs % 60000) / 1000);
+                
+                // Format the finish time for display
+                const finishTime = new Date(endTime);
+                const finishTimeStr = `${finishTime.getHours().toString().padStart(2, '0')}:${finishTime.getMinutes().toString().padStart(2, '0')}`;
+                
+                // Add a "current" or "next" prefix to clearly indicate which task is active
+                const taskPrefix = activity.orderIndex === 0 ? '' : 'Aktuelle Aufgabe: ';
+                
+                taskCountdownEl.textContent = `${taskPrefix}${activity.name}: noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`;
+                
+                // Try to update notification on lock screen every minute (not critical for app function)
+                try {
+                    if ((remainingSeconds === 0 || remainingMs <= 60000) && isNotificationSupported()) {
+                        updateTaskNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr);
+                    }
+                } catch (e) {
+                    console.error('Error updating notification:', e);
+                    // Continue even if notification fails
+                }
+                
+                // Change color when less than 1 minute remains
+                if (remainingMs < 60000) {
+                    taskCountdownEl.style.backgroundColor = '#FF4136'; // Bright red for urgency
+                } else {
+                    taskCountdownEl.style.backgroundColor = '';
+                }
             }
         }
         
@@ -945,6 +990,8 @@
             const activityDuration = parseInt(activityDurationEl.value);
             
             if (activityName && activityDuration > 0) {
+                console.log("Adding new activity:", activityName, "duration:", activityDuration);
+                
                 // Get the next order index
                 const orderIndex = state.activities.length;
                 
@@ -964,6 +1011,7 @@
                 if (state.currentTaskIndex === -1) {
                     // Set end time based on current time
                     newActivity.endTime = new Date(now.getTime() + (activityDuration * 60 * 1000));
+                    console.log("Setting end time for first task:", newActivity.endTime);
                 } else {
                     // Find the last non-completed activity's end time
                     const lastIncompleteActivity = [...state.activities]
@@ -980,9 +1028,11 @@
                     if (lastIncompleteActivity && lastIncompleteActivity.endTime) {
                         const startTime = new Date(lastIncompleteActivity.endTime);
                         newActivity.endTime = new Date(startTime.getTime() + (activityDuration * 60 * 1000));
+                        console.log("Setting end time based on last activity:", newActivity.endTime);
                     } else {
                         // Fallback to current time
                         newActivity.endTime = new Date(now.getTime() + (activityDuration * 60 * 1000));
+                        console.log("Setting end time based on current time:", newActivity.endTime);
                     }
                 }
                 
@@ -1001,6 +1051,12 @@
                 
                 // Render activities
                 renderActivities();
+                
+                // Force immediate update
+                if (taskCountdownInterval === null && state.activities.length > 0) {
+                    console.log("Starting task countdown after adding activity");
+                    startTaskCountdown();
+                }
             }
         }
         
