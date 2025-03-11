@@ -61,6 +61,18 @@
             margin-bottom: 15px;
         }
         
+        .task-countdown {
+            background-color: var(--terracotta);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
         .time-summary {
             display: flex;
             gap: 8px;
@@ -193,7 +205,7 @@
         
         .activity-time {
             font-weight: bold;
-            width: 45px;
+            width: 55px;
             font-size: 0.9rem;
         }
         
@@ -217,8 +229,8 @@
         
         .activity-btn {
             border: none;
-            width: 26px;
-            height: 26px;
+            width: 30px;
+            height: 30px;
             border-radius: 4px;
             display: flex;
             align-items: center;
@@ -365,10 +377,33 @@
             transition: bottom 0.3s ease-in-out;
             text-align: center;
             font-weight: bold;
+            max-width: 80%;
+            width: 300px;
         }
         
         .notification.show {
             bottom: 20px;
+        }
+        
+        /* Mobile specific styles */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .activity-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 1.2rem;
+            }
+            
+            .form-input {
+                font-size: 16px; /* Prevents iOS zoom on focus */
+            }
+            
+            .notification {
+                width: 90%;
+            }
         }
     </style>
 </head>
@@ -381,6 +416,10 @@
         
         <div class="countdown" id="countdown">
             Du musst in 2 Stunden rausgehen
+        </div>
+        
+        <div class="task-countdown" id="task-countdown">
+            Aktuelle Aufgabe: noch 5 Minuten
         </div>
         
         <div class="time-summary">
@@ -474,12 +513,15 @@
             alarm: {
                 enabled: true,
                 time: 15 // minutes before departure
-            }
+            },
+            taskTimer: null,
+            currentTaskIndex: -1
         };
         
         // DOM Elements
         const currentTimeEl = document.getElementById('current-time');
         const countdownEl = document.getElementById('countdown');
+        const taskCountdownEl = document.getElementById('task-countdown');
         const availableTimeEl = document.getElementById('available-time');
         const plannedTimeEl = document.getElementById('planned-time');
         const bufferTimeEl = document.getElementById('buffer-time');
@@ -497,19 +539,196 @@
         // Alarm variables
         let alarmTimeout = null;
         let notificationTimeout = null;
+        let taskCountdownInterval = null;
+        
+        // Task countdown timer
+        function startTaskCountdown() {
+            // Clear any existing interval
+            if (taskCountdownInterval) {
+                clearInterval(taskCountdownInterval);
+                taskCountdownInterval = null;
+            }
+            
+            // Find the first non-completed activity
+            const currentActivityIndex = state.activities.findIndex(a => !a.completed);
+            if (currentActivityIndex === -1) {
+                taskCountdownEl.style.display = 'none';
+                return; // No active tasks
+            }
+            
+            state.currentTaskIndex = currentActivityIndex;
+            const currentActivity = state.activities[currentActivityIndex];
+            
+            // Set the end time for this task if not already set
+            if (!currentActivity.endTime) {
+                const now = new Date();
+                const endTime = new Date(now.getTime() + (currentActivity.duration * 60 * 1000));
+                currentActivity.endTime = endTime;
+            }
+            
+            // Update the countdown display
+            updateTaskCountdown();
+            
+            // Show the task countdown
+            taskCountdownEl.style.display = 'block';
+            
+            // Start the interval to update the countdown
+            taskCountdownInterval = setInterval(updateTaskCountdown, 1000);
+        }
+        
+        function updateTaskCountdown() {
+            if (state.currentTaskIndex === -1 || state.activities.length === 0) {
+                taskCountdownEl.style.display = 'none';
+                return;
+            }
+            
+            const currentActivity = state.activities[state.currentTaskIndex];
+            if (!currentActivity || currentActivity.completed) {
+                // Move to the next task if current is completed
+                const nextIndex = state.activities.findIndex(a => !a.completed);
+                if (nextIndex === -1) {
+                    taskCountdownEl.style.display = 'none';
+                    return; // No more tasks
+                }
+                
+                state.currentTaskIndex = nextIndex;
+                const nextActivity = state.activities[nextIndex];
+                
+                // Set the end time for this task
+                const now = new Date();
+                const endTime = new Date(now.getTime() + (nextActivity.duration * 60 * 1000));
+                nextActivity.endTime = endTime;
+                
+                // Save state to persist the endTime
+                saveState();
+                
+                // Re-render activities to update finish times
+                renderActivities();
+            }
+            
+            const activity = state.activities[state.currentTaskIndex];
+            const now = new Date();
+            const endTime = activity.endTime;
+            
+            // Calculate remaining time
+            const remainingMs = endTime - now;
+            
+            if (remainingMs <= 0) {
+                // Time's up for this task!
+                playTaskCompleteSound();
+                showNotification(`Zeit abgelaufen für: ${activity.name}`, 5000);
+                
+                // Auto-complete the task
+                completeActivity(activity.id, true);
+                
+                // Check if there are more tasks
+                const nextIndex = state.activities.findIndex(a => !a.completed);
+                if (nextIndex !== -1) {
+                    state.currentTaskIndex = nextIndex;
+                    const nextActivity = state.activities[nextIndex];
+                    
+                    // Set the end time for the next task
+                    const newEndTime = new Date(now.getTime() + (nextActivity.duration * 60 * 1000));
+                    nextActivity.endTime = newEndTime;
+                } else {
+                    // No more tasks
+                    taskCountdownEl.style.display = 'none';
+                    if (taskCountdownInterval) {
+                        clearInterval(taskCountdownInterval);
+                        taskCountdownInterval = null;
+                    }
+                    return;
+                }
+            }
+            
+            // Update the display with the current task and remaining time
+            const remainingMinutes = Math.floor(remainingMs / 60000);
+            const remainingSeconds = Math.floor((remainingMs % 60000) / 1000);
+            
+            // Format the finish time for display
+            const finishTime = new Date(endTime);
+            const finishTimeStr = `${finishTime.getHours().toString().padStart(2, '0')}:${finishTime.getMinutes().toString().padStart(2, '0')}`;
+            
+            taskCountdownEl.textContent = `${activity.name}: noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`;
+            
+            // Change color when less than 1 minute remains
+            if (remainingMs < 60000) {
+                taskCountdownEl.style.backgroundColor = '#FF4136'; // Bright red for urgency
+            } else {
+                taskCountdownEl.style.backgroundColor = '';
+            }
+        }
+        
+        function playTaskCompleteSound() {
+            try {
+                // Create audio context
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const audioContext = new AudioContext();
+                
+                // Create oscillator for completion sound
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 1200; // Higher pitch for completion
+                
+                gainNode.gain.value = 0.2;
+                
+                oscillator.start();
+                
+                // Short beep pattern
+                setTimeout(() => {
+                    oscillator.frequency.value = 1400;
+                    setTimeout(() => {
+                        oscillator.frequency.value = 1600;
+                        setTimeout(() => {
+                            oscillator.stop();
+                            audioContext.close();
+                        }, 150);
+                    }, 150);
+                }, 150);
+            } catch (e) {
+                console.error("Web Audio API error:", e);
+                // Fallback to vibration if available
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([100, 50, 100]);
+                }
+            }
+        }
         
         // Activity-related functions
-        function createActivityElement(activity) {
+        function createActivityElement(activity, index) {
             const activityEl = document.createElement('div');
             activityEl.className = activity.completed ? 'activity completed' : 'activity';
-            if (activity.isCurrent) {
+            
+            // Mark as current if it's the first non-completed activity
+            if (!activity.completed && state.currentTaskIndex === index) {
                 activityEl.classList.add('current');
             }
             
             activityEl.dataset.id = activity.id;
             
+            // Calculate finish time for display
+            let finishTimeDisplay = '';
+            if (!activity.completed) {
+                if (!activity.endTime) {
+                    // If no end time set yet, calculate one from now
+                    const now = new Date();
+                    const endTime = new Date(now.getTime() + (activity.duration * 60 * 1000));
+                    finishTimeDisplay = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+                } else {
+                    // Use the saved end time
+                    finishTimeDisplay = `${activity.endTime.getHours().toString().padStart(2, '0')}:${activity.endTime.getMinutes().toString().padStart(2, '0')}`;
+                }
+            } else {
+                finishTimeDisplay = "✓";
+            }
+            
             activityEl.innerHTML = `
-                <div class="activity-time">${activity.startTime}</div>
+                <div class="activity-time">${finishTimeDisplay}</div>
                 <div class="activity-name">${activity.name}</div>
                 <div class="activity-duration">${activity.duration} min</div>
                 <div class="activity-actions">
@@ -552,59 +771,13 @@
                 return;
             }
             
-            // Sort by start time
-            const sortedActivities = [...state.activities].sort((a, b) => {
-                return timeStringToMinutes(a.startTime) - timeStringToMinutes(b.startTime);
+            // Render each activity in order
+            state.activities.forEach((activity, index) => {
+                activityListEl.appendChild(createActivityElement(activity, index));
             });
             
-            // Find current activity (first non-completed activity)
-            let currentActivitySet = false;
-            for (let i = 0; i < sortedActivities.length; i++) {
-                if (!sortedActivities[i].completed && !currentActivitySet) {
-                    sortedActivities[i].isCurrent = true;
-                    currentActivitySet = true;
-                } else {
-                    sortedActivities[i].isCurrent = false;
-                }
-            }
-            
-            // Render each activity
-            sortedActivities.forEach(activity => {
-                activityListEl.appendChild(createActivityElement(activity));
-            });
-        }
-        
-        function updateStartTimes() {
-            const now = new Date();
-            const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            
-            // Round to nearest 5 minutes
-            let startMinutes = Math.ceil(currentMinutes / 5) * 5;
-            
-            // Sort by completed status (completed activities go first)
-            const sortedActivities = [...state.activities].sort((a, b) => {
-                if (a.completed && !b.completed) return -1;
-                if (!a.completed && b.completed) return 1;
-                return 0;
-            });
-            
-            sortedActivities.forEach(activity => {
-                if (!activity.completed) {
-                    activity.startTime = formatTimeString(startMinutes);
-                    startMinutes += parseInt(activity.duration);
-                }
-            });
-            
-            // Update state and render
-            state.activities = sortedActivities;
-            saveState();
-            renderActivities();
-        }
-        
-        function formatTimeString(minutes) {
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
-            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+            // Start task countdown for the current task
+            startTaskCountdown();
         }
         
         function addActivity() {
@@ -612,26 +785,49 @@
             const activityDuration = parseInt(activityDurationEl.value);
             
             if (activityName && activityDuration > 0) {
-                // Get current time as start time
-                const now = new Date();
-                const currentMinutes = now.getHours() * 60 + now.getMinutes();
-                // Round to nearest 5 minutes
-                const startMinutes = Math.ceil(currentMinutes / 5) * 5;
+                // Get the next order index
+                const orderIndex = state.activities.length;
                 
                 // Create new activity
                 const newActivity = {
                     id: Date.now().toString(), // Unique ID
                     name: activityName,
                     duration: activityDuration,
-                    startTime: formatTimeString(startMinutes),
+                    orderIndex: orderIndex,
                     completed: false
                 };
                 
+                // Calculate end time for this task
+                const now = new Date();
+                
+                // If this is the first activity or all others are completed
+                if (state.currentTaskIndex === -1) {
+                    // Set end time based on current time
+                    newActivity.endTime = new Date(now.getTime() + (activityDuration * 60 * 1000));
+                } else {
+                    // Find the last non-completed activity's end time
+                    const lastIncompleteActivity = [...state.activities]
+                        .filter(a => !a.completed)
+                        .sort((a, b) => {
+                            if (!a.endTime && !b.endTime) return 0;
+                            if (!a.endTime) return 1;
+                            if (!b.endTime) return -1;
+                            return a.endTime - b.endTime;
+                        })
+                        .pop();
+                    
+                    // If there's a last activity with an end time, use that as the start time for this one
+                    if (lastIncompleteActivity && lastIncompleteActivity.endTime) {
+                        const startTime = new Date(lastIncompleteActivity.endTime);
+                        newActivity.endTime = new Date(startTime.getTime() + (activityDuration * 60 * 1000));
+                    } else {
+                        // Fallback to current time
+                        newActivity.endTime = new Date(now.getTime() + (activityDuration * 60 * 1000));
+                    }
+                }
+                
                 // Add to state
                 state.activities.push(newActivity);
-                
-                // Update start times for all activities
-                updateStartTimes();
                 
                 // Update time summary
                 updateTimeSummary();
@@ -642,60 +838,66 @@
                 
                 // Save state
                 saveState();
+                
+                // Render activities
+                renderActivities();
             }
         }
         
-        function completeActivity(id) {
-            const activity = state.activities.find(a => a.id === id);
-            if (activity) {
-                activity.completed = true;
-                updateStartTimes();
+        function completeActivity(id, automated = false) {
+            const activityIndex = state.activities.findIndex(a => a.id === id);
+            if (activityIndex !== -1) {
+                state.activities[activityIndex].completed = true;
+                
+                if (!automated) {
+                    // Play completion sound only if manually completed
+                    playTaskCompleteSound();
+                    showNotification(`Aktivität erledigt: ${state.activities[activityIndex].name}`, 3000);
+                }
+                
+                // Update UI
+                renderActivities();
                 updateTimeSummary();
                 saveState();
-                
-                // Play a short activity completion sound
-                playActivityCompleteSound();
-                showNotification(`Aktivität erledigt: ${activity.name}`);
             }
-        }
-        
-        function playActivityCompleteSound() {
-            // Create a short beep sound for activity completion
-            const context = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = context.createOscillator();
-            const gainNode = context.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(context.destination);
-            
-            oscillator.type = 'sine';
-            oscillator.frequency.value = 1000; // Higher pitch than alarm
-            gainNode.gain.value = 0.1; // Lower volume than alarm
-            
-            oscillator.start();
-            
-            // Short duration
-            setTimeout(() => {
-                oscillator.stop();
-                context.close();
-            }, 500);
         }
         
         function revertActivity(id) {
-            const activity = state.activities.find(a => a.id === id);
-            if (activity) {
-                activity.completed = false;
-                updateStartTimes();
+            const activityIndex = state.activities.findIndex(a => a.id === id);
+            if (activityIndex !== -1) {
+                state.activities[activityIndex].completed = false;
+                
+                // Reset endTime
+                delete state.activities[activityIndex].endTime;
+                
+                // Update UI
+                renderActivities();
                 updateTimeSummary();
                 saveState();
             }
         }
         
         function deleteActivity(id) {
-            state.activities = state.activities.filter(a => a.id !== id);
-            updateStartTimes();
-            updateTimeSummary();
-            saveState();
+            const activityIndex = state.activities.findIndex(a => a.id === id);
+            if (activityIndex !== -1) {
+                // Remove the activity
+                state.activities.splice(activityIndex, 1);
+                
+                // Update order indices
+                state.activities.forEach((activity, index) => {
+                    activity.orderIndex = index;
+                });
+                
+                // Reset current task index if needed
+                if (state.currentTaskIndex >= state.activities.length) {
+                    state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
+                }
+                
+                // Update UI
+                renderActivities();
+                updateTimeSummary();
+                saveState();
+            }
         }
         
         // Time management functions
@@ -759,7 +961,6 @@
             saveState();
             
             // Update UI
-            updateStartTimes();
             updateTimeSummary();
             
             // Schedule alarm with new settings
@@ -785,8 +986,107 @@
         }
         
         // Alarm functions
+        function playAlarm() {
+            console.log("Attempting to play alarm sound");
+            
+            // First try to use browser notification as it's more reliable
+            if ("Notification" in window) {
+                if (Notification.permission === "granted") {
+                    new Notification("ADHS Jetzt-Planer", {
+                        body: `In ${state.alarm.time} Minuten musst du rausgehen!`,
+                        icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiM2QjhFMjMiIHJ4PSIxMCIgcnk9IjEwIi8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5ONPC90ZXh0Pjwvc3ZnPg=="
+                    });
+                } else if (Notification.permission !== "denied") {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") {
+                            new Notification("ADHS Jetzt-Planer", {
+                                body: `In ${state.alarm.time} Minuten musst du rausgehen!`,
+                                icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiM2QjhFMjMiIHJ4PSIxMCIgcnk9IjEwIi8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5ONPC90ZXh0Pjwvc3ZnPg=="
+                            });
+                        }
+                    });
+                }
+            }
+            
+            // Try using the Web Audio API as a more reliable sound method
+            try {
+                // Create audio context
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const audioContext = new AudioContext();
+                
+                // Create oscillator for alarm sound
+                const oscillator1 = audioContext.createOscillator();
+                const oscillator2 = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator1.connect(gainNode);
+                oscillator2.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator1.type = 'sine';
+                oscillator1.frequency.value = 800;
+                oscillator2.type = 'sine';
+                oscillator2.frequency.value = 600;
+                
+                gainNode.gain.value = 0.2;
+                
+                oscillator1.start();
+                oscillator2.start();
+                
+                // Beep pattern
+                setTimeout(() => {
+                    gainNode.gain.value = 0;
+                    setTimeout(() => {
+                        gainNode.gain.value = 0.2;
+                        setTimeout(() => {
+                            gainNode.gain.value = 0;
+                            setTimeout(() => {
+                                gainNode.gain.value = 0.2;
+                                setTimeout(() => {
+                                    oscillator1.stop();
+                                    oscillator2.stop();
+                                    audioContext.close();
+                                }, 1000);
+                            }, 200);
+                        }, 1000);
+                    }, 200);
+                }, 1000);
+            } catch (e) {
+                console.error("Web Audio API error:", e);
+            }
+            
+            // Also try the audio element as a fallback
+            if (alarmSoundEl) {
+                alarmSoundEl.currentTime = 0;
+                
+                // Try to vibrate the device if possible (for mobile)
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([500, 200, 500]);
+                }
+                
+                const playPromise = alarmSoundEl.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.error("Audio playback error:", error);
+                        // If audio fails, use alert as last resort
+                        alert(`ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
+                    });
+                }
+            } else {
+                console.error("Audio element not found");
+                alert(`ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
+            }
+        }
+        
+        // Schedule alarm with more reliable checking
         function scheduleAlarm() {
-            if (!state.alarm.enabled) return;
+            console.log("Scheduling alarm");
+            
+            if (!state.alarm.enabled) {
+                console.log("Alarm disabled, not scheduling");
+                return;
+            }
             
             const now = new Date();
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -797,31 +1097,43 @@
             let timeUntilAlarm = alarmMinutes - currentMinutes;
             
             // If alarm time is in the past, don't schedule
-            if (timeUntilAlarm <= 0) return;
+            if (timeUntilAlarm <= 0) {
+                console.log("Alarm time in past, not scheduling");
+                return;
+            }
+            
+            console.log(`Alarm scheduled for ${timeUntilAlarm} minutes from now`);
+            
+            // Clear any existing alarm
+            if (alarmTimeout) {
+                clearTimeout(alarmTimeout);
+            }
             
             // Schedule alarm
             alarmTimeout = setTimeout(() => {
+                console.log("Alarm triggered!");
                 playAlarm();
                 showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`, 10000);
             }, timeUntilAlarm * 60 * 1000);
-        }
-        
-        function playAlarm() {
-            alarmSoundEl.currentTime = 0;
             
-            // Request permission for notifications to enable audio (helps with autoplay restrictions)
-            if (Notification.permission !== "granted") {
-                Notification.requestPermission();
+            // Also schedule a check halfway through as a backup
+            if (timeUntilAlarm > 10) {
+                setTimeout(() => {
+                    console.log("Midpoint alarm check");
+                    const now = new Date();
+                    const currMin = now.getHours() * 60 + now.getMinutes();
+                    const depMin = timeStringToMinutes(state.departureTime);
+                    const alarmMin = depMin - state.alarm.time;
+                    const remainingTime = alarmMin - currMin;
+                    
+                    // If the alarm should have triggered but didn't, or will trigger very soon
+                    if (remainingTime <= 1 && remainingTime >= -5) {
+                        console.log("Backup alarm triggered!");
+                        playAlarm();
+                        showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`, 10000);
+                    }
+                }, Math.floor(timeUntilAlarm * 30000)); // Check at halfway point
             }
-            
-            // Try to play the sound
-            alarmSoundEl.play().catch(e => {
-                console.error("Couldn't play alarm:", e);
-                // If browser blocks autoplay, show an alert instead
-                if (e.name === 'NotAllowedError') {
-                    alert(`Alarm! In ${state.alarm.time} Minuten musst du rausgehen!`);
-                }
-            });
         }
         
         function showNotification(message, duration = 5000) {
@@ -893,6 +1205,11 @@
                 const savedState = localStorage.getItem('adhsJetztPlaner');
                 if (savedState) {
                     state = JSON.parse(savedState);
+                    
+                    // Handle older versions of state
+                    if (!state.currentTaskIndex) {
+                        state.currentTaskIndex = -1;
+                    }
                 }
             } catch (e) {
                 console.log('Error loading from localStorage:', e);
@@ -902,8 +1219,10 @@
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
             // Request notification permission early
-            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                Notification.requestPermission();
+            if ("Notification" in window) {
+                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    Notification.requestPermission();
+                }
             }
             
             // Load saved state
@@ -921,14 +1240,19 @@
                 alarmOptionsEl.classList.remove('visible');
             }
             
+            // Find current task index if not set
+            if (state.currentTaskIndex === -1) {
+                state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
+            }
+            
             // Render activities
             renderActivities();
             
             // Set up update intervals
             updateTimeDisplay();
             updateTimeSummary();
-            setInterval(updateTimeDisplay, 30000); // Update time every 30 seconds
-            setInterval(updateTimeSummary, 60000); // Update summary every minute
+            setInterval(updateTimeDisplay, 10000); // Update time every 10 seconds
+            setInterval(updateTimeSummary, 30000); // Update summary every 30 seconds
             
             // Set up alarm if enabled
             scheduleAlarm();
@@ -990,12 +1314,7 @@
             
             document.getElementById('test-alarm').addEventListener('click', function() {
                 playAlarm();
-                showNotification('Alarm Test!');
-                
-                setTimeout(() => {
-                    alarmSoundEl.pause();
-                    alarmSoundEl.currentTime = 0;
-                }, 3000);
+                showNotification('Alarm Test!', 3000);
             });
             
             // Add activity on Enter key in fields
@@ -1010,6 +1329,38 @@
                     addActivity();
                 }
             });
+            
+            // Listen for visibility change to handle when app comes back into focus
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    // App is visible again, update everything
+                    updateTimeDisplay();
+                    updateTimeSummary();
+                    
+                    // Check if we need to restart task countdown
+                    if (!taskCountdownInterval && state.activities.some(a => !a.completed)) {
+                        startTaskCountdown();
+                    }
+                }
+            });
+            
+            // Special handling for mobile devices
+            if ('ontouchstart' in window) {
+                // Make buttons larger for touch
+                document.querySelectorAll('.activity-btn').forEach(btn => {
+                    btn.style.minWidth = '36px';
+                    btn.style.minHeight = '36px';
+                });
+                
+                // Enable vibration for notifications if available
+                try {
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate(1); // Test vibration permission
+                    }
+                } catch (e) {
+                    console.log('Vibration not available');
+                }
+            }
         });
     </script>
 </body>
