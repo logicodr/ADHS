@@ -4,514 +4,299 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADHS Jetzt-Planer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Modern color palette */
-            --primary: #4E6E81;
-            --primary-light: #6E8A9E;
-            --primary-dark: #3C576B;
-            --accent: #F97B22;
-            --accent-light: #FF9A54;
-            --accent-dark: #D85A00;
-            --success: #2ECC71;
-            --warning: #F1C40F;
-            --danger: #E74C3C;
-            --bg-color: #F9FAFB;
-            --surface: #FFFFFF;
-            --surface-alt: #F1F5F9;
-            --text-primary: #1E293B;
-            --text-secondary: #64748B;
-            --text-tertiary: #94A3B8;
-            --border: #E2E8F0;
-            
-            /* Sizes and spacing */
-            --radius-sm: 0.5rem;
-            --radius-md: 0.75rem;
-            --radius-lg: 1rem;
-            --spacing-xs: 0.5rem;
-            --spacing-sm: 0.75rem;
-            --spacing-md: 1rem;
-            --spacing-lg: 1.5rem;
-            --spacing-xl: 2rem;
-            
-            /* Shadow */
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        
-        /* Reset & Base */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        html {
-            font-size: 16px;
+            --olive-dark: #556B2F;
+            --olive-medium: #6B8E23;
+            --olive-light: #9ACD32;
+            --olive-pale: #E8F0D8;
+            --cream: #FFFAF0;
+            --terracotta: #CD5C5C;
+            --bg-color: #F8F9F5;
+            --text-color: #33402C;
+            --success-color: #3A5F0B;
+            --warning-color: #B59410;
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-primary);
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            overflow-x: hidden;
-            padding: 0;
+            color: var(--text-color);
             margin: 0;
+            padding: 15px;
+            line-height: 1.5;
         }
         
-        /* Layout */
         .container {
-            width: 100%;
-            max-width: 600px;
+            max-width: 500px;
             margin: 0 auto;
-            padding: var(--spacing-md);
+            padding-bottom: 20px;
         }
         
-        /* Header */
-        .app-header {
-            padding: var(--spacing-lg) var(--spacing-md);
-            background-color: var(--primary);
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .header-content {
-            max-width: 600px;
-            margin: 0 auto;
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 15px;
         }
         
-        .app-title {
-            font-size: 1.5rem;
-            font-weight: 700;
+        .header h1 {
+            font-size: 1.4rem;
+            color: var(--olive-dark);
             margin: 0;
         }
         
         .current-time {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-        
-        /* Countdown */
-        .countdown-section {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            margin: var(--spacing-md) 0;
-            box-shadow: var(--shadow-md);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .countdown-section::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
-            pointer-events: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--olive-dark);
         }
         
         .countdown {
-            font-size: 1.5rem;
-            font-weight: 600;
+            background-color: var(--olive-medium);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
-            margin-bottom: var(--spacing-md);
+            font-weight: bold;
+            margin-bottom: 15px;
         }
         
         .task-countdown {
-            background-color: var(--accent);
+            background-color: var(--terracotta);
             color: white;
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
+            padding: 8px;
+            border-radius: 8px;
             text-align: center;
-            font-weight: 500;
-            margin-top: var(--spacing-md);
-            box-shadow: var(--shadow-sm);
+            font-weight: bold;
+            margin-top: 5px;
+            margin-bottom: 15px;
             display: none;
-            position: relative;
-            overflow: hidden;
-            animation: slidein 0.3s ease-out;
         }
         
-        @keyframes slidein {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .task-countdown::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
-            pointer-events: none;
-        }
-        
-        /* Time Summary */
         .time-summary {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-lg);
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
         }
         
         .time-box {
-            background-color: var(--surface);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-md);
+            flex: 1;
+            background-color: var(--cream);
+            border-radius: 8px;
+            padding: 10px;
             text-align: center;
-            box-shadow: var(--shadow-sm);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .time-box:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .time-box-label {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            margin-bottom: var(--spacing-xs);
+            font-size: 0.85rem;
+            color: #6c757d;
         }
         
         .time-box-value {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--primary);
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 4px;
+            color: var(--olive-dark);
         }
         
         .buffer-time {
-            color: var(--success);
+            color: var(--success-color);
         }
         
         .buffer-time.warning {
-            color: var(--warning);
+            color: var(--warning-color);
         }
         
         .buffer-time.danger {
-            color: var(--danger);
+            color: var(--terracotta);
         }
         
-        /* Activities Section */
-        .section-header {
+        .activities-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: var(--spacing-md);
+            margin-bottom: 10px;
         }
         
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-primary);
+        .activities-header h2 {
+            font-size: 1.1rem;
             margin: 0;
+            color: var(--olive-dark);
         }
         
-        .btn {
+        .add-btn {
+            background-color: var(--olive-medium);
+            color: white;
             border: none;
-            border-radius: var(--radius-md);
-            padding: 0.625rem 1rem;
-            font-weight: 500;
+            border-radius: 4px;
+            padding: 6px 12px;
             cursor: pointer;
-            font-size: 0.875rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .btn-accent {
-            background-color: var(--accent);
-            color: white;
-        }
-        
-        .btn-accent:hover {
-            background-color: var(--accent-dark);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .btn-outline {
-            background-color: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-        }
-        
-        .btn-outline:hover {
-            background-color: var(--surface-alt);
-        }
-        
-        .btn-danger {
-            background-color: var(--danger);
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background-color: #c0392b;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .btn-icon {
-            width: 2.5rem;
-            height: 2.5rem;
-            padding: 0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .btn-small {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.75rem;
         }
         
         .add-form {
-            background-color: var(--surface);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
-            box-shadow: var(--shadow-md);
-            display: none;
-            animation: fadein 0.3s ease-out;
-        }
-        
-        @keyframes fadein {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .form-group {
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: var(--spacing-xs);
-            font-weight: 500;
-            color: var(--text-primary);
+            background-color: var(--cream);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .form-row {
             display: flex;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-md);
+            gap: 8px;
+            margin-bottom: 10px;
         }
         
-        .form-control {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            font-size: 1rem;
-            color: var(--text-primary);
-            background-color: var(--surface);
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        .form-input {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            background-color: white;
         }
         
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary-light);
-            box-shadow: 0 0 0 3px rgba(78, 110, 129, 0.1);
+        .form-input-name {
+            flex: 1;
         }
         
-        .form-control-duration {
-            width: 6rem;
+        .form-input-duration {
+            width: 70px;
         }
         
-        .btn-group {
-            display: flex;
-            gap: var(--spacing-sm);
+        .form-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
         }
         
-        /* Activity List */
-        .activity-list {
-            margin-bottom: var(--spacing-xl);
+        .add-activity-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .cancel-btn {
+            background-color: #f8f9fa;
+            color: var(--text-color);
         }
         
         .activity {
             display: flex;
             align-items: center;
-            background-color: var(--surface);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-md);
-            margin-bottom: var(--spacing-sm);
-            box-shadow: var(--shadow-sm);
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
+            background-color: var(--cream);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .activity.current {
-            border-left: 4px solid var(--accent);
-            background-color: #FFF8F3;
+            border-left: 4px solid var(--terracotta);
+            background-color: #FFF7F5;
         }
         
         .activity.completed {
-            background-color: var(--surface-alt);
-            border-left: 4px solid var(--success);
-        }
-        
-        .activity.completed .activity-name {
+            opacity: 0.7;
             text-decoration: line-through;
-            color: var(--text-tertiary);
+            background-color: var(--olive-pale);
+            border-left: 4px solid var(--success-color);
         }
         
         .activity-time {
-            font-weight: 600;
-            width: 3.5rem;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
+            font-weight: bold;
+            width: 55px;
+            font-size: 0.9rem;
         }
         
         .activity-name {
             flex: 1;
-            padding: 0 var(--spacing-sm);
-            font-weight: 500;
+            padding: 0 8px;
         }
         
         .activity-duration {
-            color: var(--text-tertiary);
-            font-size: 0.875rem;
-            width: 3rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+            width: 45px;
             text-align: right;
-            margin-right: var(--spacing-sm);
         }
         
         .activity-actions {
             display: flex;
-            gap: var(--spacing-xs);
+            gap: 4px;
+            margin-left: 8px;
         }
         
         .activity-btn {
-            width: 2.25rem;
-            height: 2.25rem;
             border: none;
-            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
-            background-color: var(--surface-alt);
-            color: var(--text-secondary);
-        }
-        
-        .activity-btn:hover {
-            transform: scale(1.1);
+            font-size: 1rem;
         }
         
         .complete-btn {
-            background-color: rgba(46, 204, 113, 0.1);
-            color: var(--success);
-        }
-        
-        .complete-btn:hover {
-            background-color: var(--success);
-            color: white;
+            background-color: var(--olive-pale);
+            color: var(--success-color);
         }
         
         .revert-btn {
-            background-color: rgba(241, 196, 15, 0.1);
-            color: var(--warning);
-        }
-        
-        .revert-btn:hover {
-            background-color: var(--warning);
-            color: white;
+            background-color: #FFF8E1;
+            color: var(--warning-color);
         }
         
         .delete-btn {
-            background-color: rgba(231, 76, 60, 0.1);
-            color: var(--danger);
-        }
-        
-        .delete-btn:hover {
-            background-color: var(--danger);
-            color: white;
+            background-color: #FFE8E8;
+            color: var(--terracotta);
         }
         
         .no-activities {
             text-align: center;
-            color: var(--text-secondary);
-            padding: var(--spacing-xl) 0;
-            font-size: 1rem;
-            background-color: var(--surface-alt);
-            border-radius: var(--radius-md);
-            border: 1px dashed var(--border);
+            color: #6c757d;
+            padding: 20px 0;
         }
         
-        /* Departure Settings */
-        .card {
-            background-color: var(--surface);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .card-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: var(--spacing-md);
-            color: var(--text-primary);
+        .departure-setting {
+            background-color: var(--cream);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .setting-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: var(--spacing-md);
+            margin-bottom: 10px;
         }
         
-        .setting-label {
-            font-weight: 500;
-            color: var(--text-primary);
+        .save-btn {
+            background-color: var(--olive-medium);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            margin-top: 10px;
         }
         
-        .setting-value {
-            display: flex;
-            align-items: center;
+        .alarm-settings {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
         }
         
-        .divider {
-            height: 1px;
-            background-color: var(--border);
-            margin: var(--spacing-md) 0;
-        }
-        
-        /* Toggle Switch */
         .switch {
             position: relative;
             display: inline-block;
-            width: 3rem;
-            height: 1.5rem;
+            width: 50px;
+            height: 24px;
         }
         
         .switch input {
@@ -529,157 +314,166 @@
             bottom: 0;
             background-color: #ccc;
             transition: .4s;
-            border-radius: 1.5rem;
+            border-radius: 24px;
         }
         
         .slider:before {
             position: absolute;
             content: "";
-            height: 1.1rem;
-            width: 1.1rem;
-            left: 0.2rem;
-            bottom: 0.2rem;
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
             background-color: white;
             transition: .4s;
             border-radius: 50%;
-            box-shadow: var(--shadow-sm);
         }
         
         input:checked + .slider {
-            background-color: var(--primary);
-        }
-        
-        input:focus + .slider {
-            box-shadow: 0 0 1px var(--primary);
+            background-color: var(--olive-medium);
         }
         
         input:checked + .slider:before {
-            transform: translateX(1.5rem);
+            transform: translateX(26px);
         }
         
         .alarm-icon {
-            margin-left: var(--spacing-xs);
-            color: var(--accent);
+            margin-left: 5px;
+            font-size: 1.1rem;
+            color: var(--terracotta);
         }
         
         .alarm-options {
-            margin-top: var(--spacing-md);
+            margin-top: 10px;
             display: none;
-            animation: fadein 0.3s ease-out;
         }
         
         .alarm-options.visible {
             display: block;
         }
         
-        /* Footer Actions */
-        .action-container {
-            padding: var(--spacing-lg) var(--spacing-md);
-            margin-bottom: var(--spacing-md);
+        .test-alarm-btn {
+            background-color: var(--terracotta);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-left: 10px;
         }
         
-        .action-btn {
-            width: 100%;
-            padding: var(--spacing-md) 0;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-        
-        /* Delete All Button */
-        .delete-all-container {
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        /* Notification */
+        /* Notification styles */
         .notification {
             position: fixed;
             bottom: -100px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: var(--primary-dark);
+            background-color: var(--terracotta);
             color: white;
-            padding: var(--spacing-md) var(--spacing-lg);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-lg);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             z-index: 1000;
             transition: bottom 0.3s ease-in-out;
             text-align: center;
-            font-weight: 500;
-            max-width: 90%;
-            width: 350px;
+            font-weight: bold;
+            max-width: 80%;
+            width: 300px;
         }
         
         .notification.show {
-            bottom: var(--spacing-lg);
+            bottom: 20px;
         }
         
-        /* Responsive Adjustments */
+        /* Reset button styles */
+        .reset-container {
+            margin-top: 20px;
+            background-color: var(--cream);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .reset-btn {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .reset-icon {
+            font-size: 1.2rem;
+        }
+        
+        /* Delete All button styles */
+        .delete-all-container {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            background-color: var(--cream);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .delete-all-btn {
+            background-color: var(--terracotta);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+        
+        /* Mobile specific styles */
         @media (max-width: 480px) {
-            html {
-                font-size: 15px;
-            }
-            
-            .container {
-                padding: var(--spacing-sm);
-            }
-            
-            .time-summary {
-                gap: var(--spacing-sm);
+            body {
+                padding: 10px;
             }
             
             .activity-btn {
-                width: 2.5rem;
-                height: 2.5rem;
+                width: 36px;
+                height: 36px;
+                font-size: 1.2rem;
             }
             
-            .form-row {
-                flex-direction: column;
-                gap: var(--spacing-sm);
+            .form-input {
+                font-size: 16px; /* Prevents iOS zoom on focus */
             }
             
-            .form-control-duration {
-                width: 100%;
-            }
-        }
-        
-        @media (min-width: 768px) {
-            .container {
-                padding: var(--spacing-lg);
-            }
-            
-            .card, .activity, .add-form {
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
-            }
-            
-            .card:hover, .activity:hover, .add-form:hover {
-                transform: translateY(-2px);
-                box-shadow: var(--shadow-lg);
+            .notification {
+                width: 90%;
             }
         }
     </style>
 </head>
 <body>
-    <!-- App Header -->
-    <header class="app-header">
-        <div class="header-content">
-            <h1 class="app-title">ADHS Jetzt-Planer</h1>
+    <div class="container">
+        <div class="header">
+            <h1>ADHS Jetzt-Planer</h1>
             <div class="current-time" id="current-time">12:30</div>
         </div>
-    </header>
-    
-    <div class="container">
-        <!-- Countdown Section -->
-        <div class="countdown-section">
-            <div class="countdown" id="countdown">
-                Du musst in 2 Stunden rausgehen
-            </div>
-            
-            <div class="task-countdown" id="task-countdown">
-                Aktuelle Aufgabe: noch 5 Minuten
-            </div>
+        
+        <div class="countdown" id="countdown">
+            Du musst in 2 Stunden rausgehen
         </div>
         
-        <!-- Time Summary -->
+        <div class="task-countdown" id="task-countdown">
+            Aktuelle Aufgabe: noch 5 Minuten
+        </div>
+        
         <div class="time-summary">
             <div class="time-box">
                 <div class="time-box-label">Verfügbar</div>
@@ -695,109 +489,95 @@
             </div>
         </div>
         
-        <!-- Activities Section -->
-        <div class="section-header">
-            <h2 class="section-title">Meine Aktivitäten</h2>
-            <button class="btn btn-primary" id="show-add-form">+ Neue Aktivität</button>
+        <div class="activities-header">
+            <h2>Meine Aktivitäten</h2>
+            <button class="add-btn" id="show-add-form">+ Aktivität</button>
         </div>
         
-        <!-- Add Activity Form -->
-        <div class="add-form" id="add-form">
-            <div class="form-group">
-                <label class="form-label" for="activity-name">Was willst du tun?</label>
-                <input type="text" class="form-control" id="activity-name" placeholder="z.B. Duschen, E-Mails beantworten...">
+        <div class="add-form" id="add-form" style="display: none;">
+            <div class="form-row">
+                <input type="text" class="form-input form-input-name" id="activity-name" placeholder="Was willst du tun?">
+                <input type="number" class="form-input form-input-duration" id="activity-duration" placeholder="Min" value="10" min="1" max="180">
             </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="activity-duration">Wie lange? (Minuten)</label>
-                <input type="number" class="form-control" id="activity-duration" value="10" min="1" max="180">
-            </div>
-            
-            <div class="btn-group">
-                <button class="btn btn-primary" id="add-activity-btn">Hinzufügen</button>
-                <button class="btn btn-outline" id="cancel-add">Abbrechen</button>
+            <div class="form-row">
+                <button class="form-btn add-activity-btn" id="add-activity-btn">Hinzufügen</button>
+                <button class="form-btn cancel-btn" id="cancel-add">Abbrechen</button>
             </div>
         </div>
         
-        <!-- Activity List -->
-        <div class="activity-list" id="activity-list">
+        <div id="activity-list">
             <!-- Activities will be dynamically added here -->
         </div>
         
-        <!-- Departure Settings -->
-        <div class="card">
-            <h3 class="card-title">Einstellungen</h3>
-            
+        <div class="departure-setting">
             <div class="setting-row">
-                <div class="setting-label">Wann musst du rausgehen?</div>
-                <input type="time" class="form-control" id="departure-time" value="14:30">
+                <div>Wann musst du rausgehen?</div>
+                <input type="time" class="form-input" id="departure-time" value="14:30">
             </div>
             
-            <div class="divider"></div>
-            
-            <div class="setting-row">
-                <div class="setting-label">
-                    Alarm aktivieren
-                    <span class="alarm-icon">🔔</span>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="alarm-toggle" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="alarm-options visible" id="alarm-options">
+            <div class="alarm-settings">
                 <div class="setting-row">
-                    <div class="setting-label">Alarm-Zeit vor Ausgehen:</div>
-                    <div class="setting-value">
-                        <select class="form-control" id="alarm-time">
-                            <option value="5">5 Minuten</option>
-                            <option value="10">10 Minuten</option>
-                            <option value="15" selected>15 Minuten</option>
-                            <option value="30">30 Minuten</option>
-                            <option value="60">1 Stunde</option>
-                        </select>
-                        <button class="btn btn-small btn-outline" id="test-alarm" style="margin-left: 0.5rem;">Test</button>
+                    <div>Alarm aktivieren 
+                        <span class="alarm-icon">🔔</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="alarm-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="alarm-options visible" id="alarm-options">
+                    <div class="setting-row">
+                        <div>Alarm-Zeit vor Ausgehen:</div>
+                        <div>
+                            <select class="form-input" id="alarm-time">
+                                <option value="5">5 Minuten</option>
+                                <option value="10">10 Minuten</option>
+                                <option value="15" selected>15 Minuten</option>
+                                <option value="30">30 Minuten</option>
+                                <option value="60">1 Stunde</option>
+                            </select>
+                            <button class="test-alarm-btn" id="test-alarm">Test</button>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="divider"></div>
-            
-            <button class="btn btn-primary" id="save-departure">Speichern</button>
+            <button class="save-btn" id="save-departure">Einstellungen speichern</button>
         </div>
     </div>
     
-    <!-- Delete All Button Container -->
-    <div class="container action-container">
-        <div class="delete-all-container">
-            <button class="btn btn-danger action-btn" id="delete-all-btn">
-                Alle Aktivitäten löschen
-            </button>
-        </div>
-    </div>
-    
-    <!-- Reset Button Container -->
-    <div class="container action-container">
-        <button class="btn btn-outline action-btn" id="reset-app">
-            App zurücksetzen
-        </button>
-    </div>
-    
-    <!-- Notification -->
     <div class="notification" id="notification">
         Zeit zum Ausgehen!
     </div>
     
-    <!-- Audio Elements -->
+    <!-- New container for the delete all button -->
+    <div class="container" style="margin-top: 10px; margin-bottom: 10px;">
+        <div class="delete-all-container">
+            <button class="delete-all-btn" id="delete-all-btn">Alle löschen</button>
+        </div>
+    </div>
+    
+    <!-- Reset container at the bottom -->
+    <div class="container" style="margin-top: 10px; margin-bottom: 30px;">
+        <div class="reset-container">
+            <button class="reset-btn" id="reset-app">
+                <span class="reset-icon">↺</span> Daten löschen / App zurücksetzen
+            </button>
+        </div>
+    </div>
+    
+    <!-- Embedded audio files using data URIs -->
     <audio id="alarm-sound">
+        <!-- Fallback beep sound as data URI -->
         <source src="data:audio/wav;base64,UklGRuYCAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YcICAACAgICAgICAgICAgICAgICAgICAgICAgICAf3hxeH+AfXR1gIqAfHF0gIyFfG10f4+HeWpxeIqPgXBtD3WSkIN2ZmBygpOKf29eWm2JmI99b1lUY32Sk4d7Z1lWX3iUkGdjVlVid26Nj3VlZVtldGaCjnBnY1lheHR8gG9tbWJjbnF3eXt1dG1tbXEQfX16eXh5c3F1eX19fXz9weTtxQAAABURGiIeMzEhHRYNABUdJCYmJB8aEgwID4WdoKGnnDEhFQ0GBwUhLjk9QTs2MkBCQkA7PDw8OTY7PkBCRUhKSUpJRkA3FyYnKS0vMjQ1OTs9Pj9AQUFCQ0RFRkdISUpLp6SpqqmoqKioqKipqaqsrq+wsbKys7S0tba3t7i4uLm5urq7u7y8vb29vr6/v7/AwMDAwMDBwcHBwcHBwsLCwsLCwcHBwcHBwcHBwcHCwsLDw8TFxsfIyMnJysvLy8vMzMzMzM3Nzc3Nzc3Nzc3Nzc3Ozs7Ozs7Pz8/Pz8/Pz8/Pzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs/Pz8/Pz8/Pz8/Pz8/P0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQAzpcbAQDMxgKBStUIwMJJg8CBhkYCQQIEQoDChIOBAUREAoDDBMMBQwSEQ0GCxIPBwsQEQsHDRIPCQoQEQ0ICxIQCgkOEQ8KCQ8RDggMEBAMCA0RDwkLDxAOCQsQEAwJDRAQCwkOEQ8LCg0RDwsKDxAPCwoOEA8MCQ8QDgsJDxAOCwoPEA8LCg4QDwsKDhAPCwoOEA8LCg4QDwsKDhAPCwkPEA4LCQ8QDgsJDxAOCwkPEA4LCQ8QDgsJDhEOCwkOEQ4KCg4RDgoKDhEOCgoPEA8KCg8QDwoKDxAPCgoPEA8KCg8QDwoKDhEOCgkPEA4KCQ8QDgoJDxAOCgkPEA4KCQ8QDgoJDxAOCgkPEA4KCQ8QDgoJDhEOCQoOEQ4JCg4RDgkKDhEOCQkPEA4JCQ8QDgkJDxAOCQkPEA4JCQ8QDgkJDxAOCQkPEA4JCQ4RDgkJDhEOCQkOEQ4JCQ4RDgkJDhEOCQkOEQ4JCQ4RDgkIDxAOCQgPEA4JCA8QDgkIDxAOCQgPEA4JCA8QDgkIDhEOCAgOEQ4ICA4RDggIDhEOCAgOEQ4ICA4RDggIDhEOCAgOEQ4ICA4RDggHDxAOCAcPEA4IBw8QDggHDxAOCAcPEA4IBw8QDggHDhEOBwgOEQ4HCA4RDgcIDhEOBwgOEQ4HCA4RDgcIDhEOBwgOEQ4HBw8QDgcHDxAOBwcPEA4HBw8QDgcHDxAOBwcPEA4HBw4RDgcHDhEOBwcOEQ4HBw4RDgcHDhEOBwcOEQ4HBw4RDgYIDhEOBgcPEA4GBw8QDgYHDxAOBgcPEA4GBw8QDgYHDhEOBgcOEQ4GBw4RDgYHDhEOBgcOEQ4GBw4RDgYHDhEOBgYPEA4GBg8QDgYGDxAOBgYPEA4GBg8QDgYGDxAOBgYOEQ4GBg4RDgYGDhEOBgYOEQ3///9a" type="audio/wav">
     </audio>
     
     <audio id="task-complete-sound">
+        <!-- Task complete sound as data URI (short beep) -->
         <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAB4eHh4eHiIiJiYmGhoaFhYSEg4OCgoGBgICAAAAAA=" type="audio/wav">
     </audio>
-    
+
     <script>
         // State management
         let state = {
@@ -969,7 +749,7 @@
             
             // Show the task countdown with a brief highlight
             taskCountdownEl.style.display = 'block';
-            taskCountdownEl.style.backgroundColor = 'var(--success)'; // Green highlight
+            taskCountdownEl.style.backgroundColor = '#3CB371'; // Green highlight
             setTimeout(() => {
                 taskCountdownEl.style.backgroundColor = ''; // Reset color
             }, 1500);
@@ -1002,7 +782,7 @@
                 nextActivity.endTime = endTime;
                 
                 // Highlight the transition to a new task
-                taskCountdownEl.style.backgroundColor = 'var(--success)'; // Green to indicate new task
+                taskCountdownEl.style.backgroundColor = '#3CB371'; // Green to indicate new task
                 setTimeout(() => {
                     taskCountdownEl.style.backgroundColor = ''; // Reset after 2 seconds
                 }, 2000);
@@ -1078,7 +858,7 @@
             
             // Change color when less than 1 minute remains
             if (remainingMs < 60000) {
-                taskCountdownEl.style.backgroundColor = 'var(--danger)'; // Red for urgency
+                taskCountdownEl.style.backgroundColor = '#FF4136'; // Bright red for urgency
             } else {
                 taskCountdownEl.style.backgroundColor = '';
             }
@@ -1185,9 +965,9 @@
                 <div class="activity-duration">${activity.duration} min</div>
                 <div class="activity-actions">
                     ${activity.completed 
-                        ? '<button class="activity-btn revert-btn" aria-label="Wiederherstellen">↺</button>'
-                        : '<button class="activity-btn complete-btn" aria-label="Erledigt">✓</button>'}
-                    <button class="activity-btn delete-btn" aria-label="Löschen">×</button>
+                        ? '<button class="activity-btn revert-btn">↺</button>'
+                        : '<button class="activity-btn complete-btn">✓</button>'}
+                    <button class="activity-btn delete-btn">×</button>
                 </div>
             `;
             
@@ -1301,9 +1081,6 @@
                 
                 // Render activities
                 renderActivities();
-                
-                // Show success notification
-                showNotification('Aktivität hinzugefügt', 2000);
             }
         }
         
@@ -1337,17 +1114,12 @@
                 renderActivities();
                 updateTimeSummary();
                 saveState();
-                
-                // Show notification
-                showNotification(`Aktivität wiederhergestellt: ${state.activities[activityIndex].name}`, 2000);
             }
         }
         
         function deleteActivity(id) {
             const activityIndex = state.activities.findIndex(a => a.id === id);
             if (activityIndex !== -1) {
-                const activityName = state.activities[activityIndex].name;
-                
                 // Remove the activity
                 state.activities.splice(activityIndex, 1);
                 
@@ -1363,9 +1135,6 @@
                 renderActivities();
                 updateTimeSummary();
                 saveState();
-                
-                // Show notification
-                showNotification(`Aktivität gelöscht: ${activityName}`, 2000);
             }
         }
         
@@ -1414,10 +1183,10 @@
             // Update countdown
             if (availableTime <= 0) {
                 countdownEl.textContent = 'Zeit zum Ausgehen!';
-                document.querySelector('.countdown-section').style.background = 'linear-gradient(135deg, var(--danger), #c0392b)';
+                countdownEl.style.backgroundColor = '#CD5C5C';
             } else {
                 countdownEl.textContent = `Du musst in ${formatTimeSpan(availableTime)} rausgehen`;
-                document.querySelector('.countdown-section').style.background = '';
+                countdownEl.style.backgroundColor = '';
             }
         }
         
@@ -1446,7 +1215,15 @@
             }
             
             // Show confirmation
-            showNotification('Einstellungen gespeichert', 2000);
+            const saveBtn = document.getElementById('save-departure');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Gespeichert!';
+            saveBtn.disabled = true;
+            
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }, 1500);
         }
         
         // Improved alarm function with multiple fallbacks
@@ -1858,16 +1635,6 @@
                     }
                 });
                 
-                // Add visual feedback to all buttons
-                document.querySelectorAll('.btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        this.style.transform = 'scale(0.95)';
-                        setTimeout(() => {
-                            this.style.transform = '';
-                        }, 100);
-                    });
-                });
-                
                 // Listen for visibility change to handle when app comes back into focus
                 document.addEventListener('visibilitychange', function() {
                     if (!document.hidden) {
@@ -1882,7 +1649,16 @@
                     }
                 });
                 
-                // Preload audio elements
+                // Special handling for mobile devices
+                if ('ontouchstart' in window) {
+                    // Make buttons larger for touch
+                    document.querySelectorAll('.activity-btn').forEach(btn => {
+                        btn.style.minWidth = '36px';
+                        btn.style.minHeight = '36px';
+                    });
+                }
+                
+                // Pre-load audio elements
                 alarmSoundEl.load();
                 taskCompleteSoundEl.load();
                 
@@ -1894,7 +1670,7 @@
                 
             } catch (e) {
                 console.error("Error initializing app:", e);
-                showNotification("Es gab ein Problem beim Starten der App. Bitte laden Sie die Seite neu.", 5000);
+                alert("Es gab ein Problem beim Starten der App. Bitte laden Sie die Seite neu.");
             }
         });
     </script>
