@@ -30,7 +30,6 @@
         .container {
             max-width: 500px;
             margin: 0 auto;
-            padding-bottom: 20px;
         }
         
         .header {
@@ -409,11 +408,11 @@
             justify-content: center;
             align-items: center;
             gap: 8px;
+            margin-bottom: 10px;
         }
         
         .delete-all-btn {
             background-color: #CD5C5C;
-            margin-top: 10px;
         }
         
         .reset-icon {
@@ -531,16 +530,14 @@
             <button class="save-btn" id="save-departure">Einstellungen speichern</button>
         </div>
         
-        <!-- Bottom buttons container -->
+        <!-- New reset container with delete all button -->
         <div class="reset-container">
-            <!-- Delete All Activities button moved to bottom -->
             <button class="reset-btn delete-all-btn" id="delete-all-btn">
                 <span class="reset-icon">🗑️</span> Alle Aktivitäten löschen
             </button>
             
-            <!-- Reset App button -->
-            <button class="reset-btn" id="reset-app" style="margin-top: 10px;">
-                <span class="reset-icon">↺</span> App zurücksetzen
+            <button class="reset-btn" id="reset-app">
+                <span class="reset-icon">↺</span> Daten löschen / App zurücksetzen
             </button>
         </div>
     </div>
