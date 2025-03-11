@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS remains unchanged - keeping original styling */
         :root {
             /* Modern color palette */
             --primary: #4F6F52;
@@ -679,25 +678,6 @@
         .notification.show {
             bottom: calc(var(--space-lg) + env(safe-area-inset-bottom, 0));
         }
-
-        /* Audio status indicator */
-        .audio-status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background-color: var(--primary-light);
-            color: white;
-            padding: 4px 8px;
-            border-radius: var(--radius-sm);
-            font-size: 0.75rem;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: 1000;
-        }
-        
-        .audio-status.show {
-            opacity: 1;
-        }
         
         /* Icon styles */
         .icon {
@@ -723,41 +703,10 @@
                 padding: var(--space-xl);
             }
         }
-
-        /* Audio unlock button */
-        .audio-unlock-container {
-            text-align: center;
-            margin-bottom: var(--space-md);
-            padding: var(--space-sm);
-            background-color: var(--surface-variant);
-            border-radius: var(--radius-md);
-            display: none;
-        }
-        
-        .audio-unlock-btn {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: var(--radius-sm);
-            padding: var(--space-sm) var(--space-lg);
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-        
-        .audio-unlock-btn:hover {
-            background-color: var(--primary-dark);
-        }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Audio unlock banner -->
-        <div class="audio-unlock-container" id="audio-unlock-container">
-            <button class="audio-unlock-btn" id="audio-unlock-btn">Audio aktivieren</button>
-        </div>
-        
         <!-- Header -->
         <header class="app-header">
             <h1 class="app-title">ADHS Jetzt-Planer</h1>
@@ -872,10 +821,18 @@
         Zeit zum Ausgehen!
     </div>
     
-    <!-- Audio status indicator -->
-    <div class="audio-status" id="audio-status">Audio aktiviert</div>
+    <!-- Audio Elements -->
+    <audio id="alarm-sound" preload="auto">
+        <source src="uplifting-intro-music-for-youtube-and-podcasts-by-joshua-wales-292600.mp3" type="audio/mpeg">
+        <!-- Fallback for better compatibility -->
+        <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHCMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0O7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7v////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAVNf//zgMQALwCVAV7BgAiMGMxLjExMDIzMjIzMjMyMzM1VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUXsurxVf//zIMQMVxACLgRiAATBXXLr69Ve+KaVe+KcipN8U4sBMO4CYDgJgOBMB7/h3AEG4MAMRMAAAKdpEP0iBoBoZYHkAICIMAQgCYCAA8OMYQuGGLQqIgByPYDQAAf4DgDiCgMAGNYcyIjGggihDYKPcL8E//OExAImGn7VMMPMBN8EgBx4EQCx4FQKh4EQCx4EQBx4EQBx4EQCx4KgOCBCACgQAYH//y4DggQgAoIv//KAOCBCACABA0wKGAACgdA6BMMCRgSMCBgQF//+YFDAgYEDAgY5hwg2GBNMNA/////////+XFwHi7/////////8vwoAeFA/////////91gBMOG3/////wowKIKrVZqRRsqqqqrtSKNlVVVf/zIMQFJ5ACKATeAACqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MgxAQn6AIgAuwAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/8yDEBCfoAiAC7AAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/zIMQEJ+gCIALsAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq" type="audio/mpeg">
+        <source src="data:audio/wav;base64,UklGRuYCAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YcICAACAgICAgICAgICAgICAgICAgICAgICAgICAf3hxeH+AfXR1gIqAfHF0gIyFfG10f4+HeWpxeIqPgXBtD3WSkIN2ZmBygpOKf29eWm2JmI99b1lUY32Sk4d7Z1lWX3iUkGdjVlVid26Nj3VlZVtldGaCjnBnY1lheHR8gG9tbWJjbnF3eXt1dG1tbXEQfX16eXh5c3F1eX19fXz9weTtxQAAABURGiIeMzEhHRYNABUdJCYmJB8aEgwID4WdoKGnnDEhFQ0GBwUhLjk9QTs2MkBCQkA7PDw8OTY7PkBCRUhKSUpJRkA3FyYnKS0vMjQ1OTs9Pj9AQUFCQ0RFRkdISUpLp6SpqqmoqKioqKipqaqsrq+wsbKys7S0tba3t7i4uLm5urq7u7y8vb29vr6/v7/AwMDAwMDBwcHBwcHBwsLCwsLCwcHBwcHBwcHBwcHCwsLDw8TFxsfIyMnJysvLy8vMzMzMzM3Nzc3Nzc3Nzc3Nzc3Ozs7Ozs7Pz8/Pz8/Pz8/Pzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs/Pz8/Pz8/Pz8/Pz8/P0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQAzpcbAQDMxgKBStUIwMJJg8CBhkYCQQIEQoDChIOBAUREAoDDBMMBQwSEQ0GCxIPBwsQEQsHDRIPCQoQEQ0ICxIQCgkOEQ8KCQ8RDggMEBAMCA0RDwkLDxAOCQsQEAwJDRAQCwkOEQ8LCg0RDwsKDxAPCwoOEA8MCQ8QDgsJDxAOCwoPEA8LCg4QDwsKDhAPCwoOEA8LCg4QDwsKDhAPCwkPEA4LCQ8QDgsJDxAOCwkPEA4LCQ8QDgsJDhEOCwkOEQ4KCg4RDgoKDhEOCgoPEA8KCg8QDwoKDxAPCgoPEA8KCg8QDwoKDhEOCgkPEA4KCQ8QDgoJDxAOCgkPEA4KCQ8QDgoJDxAOCgkPEA4KCQ8QDgoJDhEOCQoOEQ4JCg4RDgkKDhEOCQkPEA4JCQ8QDgkJDxAOCQkPEA4JCQ8QDgkJDxAOCQkPEA4JCQ4RDgkJDhEOCQkOEQ4JCQ4RDgkJDhEOCQkOEQ4JCQ4RDgkIDxAOCQgPEA4JCA8QDgkIDxAOCQgPEA4JCA8QDgkIDhEOCAgOEQ4ICA4RDggIDhEOCAgOEQ4ICA4RDggIDhEOCAgOEQ4ICA4RDggHDxAOCAcPEA4IBw8QDggHDxAOCAcPEA4IBw8QDggHDhEOBwgOEQ4HCA4RDgcIDhEOBwgOEQ4HCA4RDgcIDhEOBwgOEQ4HBw8QDgcHDxAOBwcPEA4HBw8QDgcHDxAOBwcPEA4HBw4RDgcHDhEOBwcOEQ4HBw4RDgcHDhEOBwcOEQ4HBw4RDgYIDhEOBgcPEA4GBw8QDgYHDxAOBgcPEA4GBw8QDgYHDhEOBgcOEQ4GBw4RDgYHDhEOBgcOEQ4GBw4RDgYHDhEOBgYPEA4GBg8QDgYGDxAOBgYPEA4GBg8QDgYGDxAOBgYOEQ4GBg4RDgYGDhEOBgYOEQ3///9a" type="audio/wav">
+    </audio>
     
-    <!-- Script -->
+    <audio id="task-complete-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRpQDAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YXADAACAmpqalZWVlZWQkI2NjY2IiIeHh4eEhIODg4OCgoGBgYGAf4B/gH+Af4CAf39+fn5+fX1+fn5+f39/f4CAgIGBgYKCgoODg4ODhISEhYWFhoaGhoeHiIiJiYmJiYmKiouLi4yMjI2Njy8vNTVAQEZGTU1TU1lZXV1iYmZmaGhrZmVkYmJiZGRnZ2lpa2tubm9vcXFzc3R0dXV1dXV1dHRycnFxcG9vbm5tbWxsamppZ2dmZmRjYmJgYF5eXFxbW1paWVhXV1dXVlZWVldXV1hYWVlcXF9fYWFkZGZmaWlra25ucHByc3N0dXV1dXR0c3NxcXBvbm5ra2pqaGdmZWRiYV9eXFtZWFZVU1JRUVBPTk5OTk5PT1BRU1RWWFpcXmBhZGVnamttbW5vcHBxcXFwcG9ubWtqaWdmZGNgX15cWllXVlVUU1JSUVFQUFFRUVJTVVZYWltdX2FjZWdpa21ub29wcHBwb29ubWxraWhmZGJhX11cWlhXVlVUUlFRUE9PUFJSU1RVV1lcXmBiZGZoamtsbW5ubm5ubWxramhmZGNhX11bWVdWVFNSUVBOTk1NTU5PUFJUVVdZW11fYWNlZ2lqbGxtbW1tbGtqaGdlY2FfXlxaWFdVU1JRT05NTEtMTE1OT1FTVFZZW11fYWNlZ2hpamtqamppaGdlZGJgXlxaWFZUU1FQTk1LSklJSktMTlBRU1VXWVxeYGJjZWZnaGhoaGdmZWRiYF5cWlhWVFJQT01LSEhHRkdISUpMTlBSVFZYWlxeYGFjZGVlZmZmZWRjYmBfXVtZV1VSUk9NTEpIR0VFRUVGSEpLTU9RU1VXWVtdXl9hYmNjY2NjYmFgXl1bWVdVU1FPTUtJSEZFREREREVGSElLTU9RU1VXWFpcXV5fYGBgYF9fXl1cWlhXVVNRT01LSUhGRUNDQ0NEREZHSUpMTk9RU1RWWFlbXFxdXV1dXVxbWlhXVVRSUE5MSklHRkVEQ0JCQkNERUZISUpMTU9QUVNUVVZXV1hYWFhXV1ZWVVNSUVA2NjMzLy8sLCkpJyclJSMjIiIhISAgICAgICEhIiIjIyQkJSUmJicnKCgpKSoqKysrLCwtLS0tLS0tLS0tLCwsKysrKysqKioqKioqKioqKioqKisrKysrLCwtLS0uLi4vLzAwMDExMjIyMjMzMzMzMzMzMzMzMjIyMjExMTEwMDAwLy8vLy8uLi4uLi4uLi4uLi8vLy8vLy8vLzAwMDAwMDAwMDAwLy8vLy8vLy8vLy8vLy8vLy8vLy8vLzAwMDAwMDAwMDAwMDAwMDAwMDAwLy8vLy8vLy8vLy8vLy8vLy8vLzAwMDAwMDAwMDAwMDAwMDAwMDA=" type="audio/wav">
+    </audio>
+    
     <script>
         // State management
         let state = {
@@ -887,12 +844,6 @@
             },
             currentTaskIndex: -1
         };
-        
-        // Audio state management
-        let audioContext = null;
-        let audioInitialized = false;
-        let audioUnlockAttempted = false;
-        let lastInteractionTime = 0;
         
         // DOM Elements
         const currentTimeEl = document.getElementById('current-time');
@@ -909,425 +860,114 @@
         const alarmToggleEl = document.getElementById('alarm-toggle');
         const alarmOptionsEl = document.getElementById('alarm-options');
         const alarmTimeEl = document.getElementById('alarm-time');
+        const alarmSoundEl = document.getElementById('alarm-sound');
+        const taskCompleteSoundEl = document.getElementById('task-complete-sound');
         const notificationEl = document.getElementById('notification');
-        const audioStatusEl = document.getElementById('audio-status');
-        const audioUnlockContainerEl = document.getElementById('audio-unlock-container');
-        const audioUnlockBtnEl = document.getElementById('audio-unlock-btn');
         
         // Alarm variables
         let alarmTimeout = null;
         let notificationTimeout = null;
         let taskCountdownInterval = null;
-        let audioStatusTimeout = null;
+        let audioInitialized = false;
         
-        // Create audio elements programmatically instead of using data URIs
-        // This is more reliable across browsers
-        const alarmSoundEl = new Audio();
-        const taskCompleteSoundEl = new Audio();
-        
-        // Set up audio elements with better browser compatibility
-        function setupAudioElements() {
-            // Simple beep for task complete (short, high frequency)
-            taskCompleteSoundEl.src = 'data:audio/wav;base64,UklGRh4BAABXQVZFZM10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YfoAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAA==';
-            taskCompleteSoundEl.preload = 'auto';
-            
-            // Alarm sound (longer, more noticeable pattern)
-            alarmSoundEl.src = 'data:audio/wav;base64,UklGRpQCAABXQVZFZm10IBAAAAABAAEARKwAABCxAgAEACAAZGF0YbACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQE1RZXN9iJOdp7G4vsHAtrGolod9cV9MNx0G7tfDr5uIcV9NNiAN9ujezMC0qJyRhHlvZFpQRz41LicsNENYcIiizmDa+Rf9JU5og5WovsjU3ebr7ezn39bLv66chGtQNBXz1bykkHpkUDwqGAz/9u7m393Z19TU1tjd5Oz2ARIjO1Jvh5yxxdHc5u71+v3/////////////////////////////////////////////////////////////////+/bx6+PYzcGzpJV+Y0UnEO3RuqGGa1A5IQz57N7QxbmtoZeOhXx1bWRdVU9JREA6NjIwMTU9SVVla3mHlqSywtDd6/j//////+vj2s3Aq5eDZ0gqEezQtZp8XEIY6sPRxtjk8v/Qdn+cxOn1DzhkjbDT+Bc9YYCfvtrz9fDev/P9Fx1BdKXfGIq/HH6xAUeC3SHCJJfeRptKiRUHnwtLjPIx8Drt6ebY/g8bJ0NohanM5fwTKD5UaHmKmKStrK2rqKCXjH5vXkcpDuvNspVzSyYK4Mi5raahnZmYm6Costfp/xk8YIu28xZBb5rH8SRVjszsPIbWMrlbmzYGGwpbFpYW2zHl6uPS8AEUJDdOaYCXrMTZ6vgHGCctOURPWF9kZmdmYl1WTkU6LSUbEAXz5NbIuauelpCNjI6RlZqgqK+3wMnR2eDn7fL2+v4DCAsMDg8PDw4MCAQA+/Xv6OHZzsS5rZ+ShHZpW003IALo0ryrmH9nUDsnFwj57ujg2dPNyMTCwcHDx8vR2OHq9P8PLUBeeo+kucnY5vP+Cx4xQlJjcX2IkpynsbS2t7W1saJ/Tw==';
-            alarmSoundEl.preload = 'auto';
-            
-            // Add elements to DOM for better reliability
-            document.body.appendChild(taskCompleteSoundEl);
-            document.body.appendChild(alarmSoundEl);
-        }
-        
-        // Enhanced audio initialization
-        async function initializeAudio(userInteraction = false) {
-            // Don't re-initialize if already done
-            if (audioInitialized) return true;
-            
-            // Update last interaction time
-            if (userInteraction) {
-                lastInteractionTime = Date.now();
-            }
+        // General audio setup - called on first user interaction
+        function initAudio() {
+            if (audioInitialized) return;
             
             try {
-                console.log("Initializing audio...");
-                
-                // Create audio context with the most compatible approach
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                audioContext = new AudioContext();
-                
-                // Resume audio context if suspended
-                if (audioContext.state === 'suspended') {
-                    try {
-                        await audioContext.resume();
-                        console.log("AudioContext resumed:", audioContext.state);
-                    } catch (e) {
-                        console.warn("Could not resume audio context:", e);
-                    }
-                }
-                
-                // Setup a test oscillator to unlock audio on mobile
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                gainNode.gain.value = 0.001; // Extremely quiet, essentially silent
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                // Start and immediately stop the oscillator
-                oscillator.start(0);
-                oscillator.stop(audioContext.currentTime + 0.001);
-                
-                // Try to play audio elements with zero volume to unlock them
-                try {
-                    taskCompleteSoundEl.volume = 0.001;
-                    const taskPromise = taskCompleteSoundEl.play();
-                    if (taskPromise !== undefined) {
-                        await taskPromise;
-                        setTimeout(() => {
-                            taskCompleteSoundEl.pause();
-                            taskCompleteSoundEl.currentTime = 0;
-                            taskCompleteSoundEl.volume = 1.0;
-                        }, 50);
-                    }
-                } catch (e) {
-                    console.warn("Could not pre-play task sound:", e);
-                }
-                
-                try {
-                    alarmSoundEl.volume = 0.001;
-                    const alarmPromise = alarmSoundEl.play();
-                    if (alarmPromise !== undefined) {
-                        await alarmPromise;
-                        setTimeout(() => {
-                            alarmSoundEl.pause();
-                            alarmSoundEl.currentTime = 0;
-                            alarmSoundEl.volume = 1.0;
-                        }, 50);
-                    }
-                } catch (e) {
-                    console.warn("Could not pre-play alarm sound:", e);
-                }
-                
-                // If we've gotten this far without errors, mark audio as initialized
-                audioInitialized = true;
-                
-                // Show audio status
-                showAudioStatus("Audio aktiviert");
-                
-                // Hide the audio unlock banner if visible
-                audioUnlockContainerEl.style.display = 'none';
-                
-                console.log("Audio successfully initialized!");
-                return true;
-            } catch (e) {
-                console.error("Audio initialization failed:", e);
-                
-                // If this was a user interaction and still failed, show message
-                if (userInteraction) {
-                    showAudioStatus("Audio konnte nicht aktiviert werden", true);
-                }
-                
-                return false;
-            }
-        }
-        
-        // Show audio status with better feedback
-        function showAudioStatus(message, isError = false) {
-            audioStatusEl.textContent = message;
-            audioStatusEl.style.backgroundColor = isError ? '#F44336' : ''; // Red for error
-            audioStatusEl.classList.add('show');
-            
-            // Clear existing timeout
-            if (audioStatusTimeout) {
-                clearTimeout(audioStatusTimeout);
-            }
-            
-            // Hide after 3 seconds
-            audioStatusTimeout = setTimeout(() => {
-                audioStatusEl.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Handle audio unlock requests
-        function handleAudioUnlock() {
-            initializeAudio(true).then(success => {
-                if (success) {
-                    // Play a very short sound to confirm audio works
-                    playTestSound();
-                } else {
-                    // Show instructions if audio still doesn't work
-                    showNotification("Audio konnte nicht aktiviert werden. Bitte tippe auf den Bildschirm.", 5000);
-                }
-            });
-        }
-        
-        // Short test sound to confirm audio is working
-        function playTestSound() {
-            if (!audioContext) return;
-            
-            try {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.type = 'sine';
-                oscillator.frequency.value = 880; // A note
-                
-                gainNode.gain.value = 0.2;
-                
-                oscillator.start();
-                setTimeout(() => {
-                    oscillator.stop();
-                }, 200);
-            } catch (e) {
-                console.error("Error playing test sound:", e);
-            }
-        }
-        
-        // Improved task complete sound
-        async function playTaskCompleteSound() {
-            try {
-                // Ensure audio is active
-                if (!audioInitialized && Date.now() - lastInteractionTime < 1000) {
-                    await initializeAudio(true);
-                }
-                
-                // First attempt to use the HTML5 Audio element
-                taskCompleteSoundEl.currentTime = 0;
-                taskCompleteSoundEl.volume = 1.0;
-                
-                try {
-                    const playPromise = taskCompleteSoundEl.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(error => {
-                            console.warn("Task sound playback failed, using fallback:", error);
-                            playTaskCompleteSoundFallback();
-                        });
-                    }
-                } catch (e) {
-                    console.warn("Direct task sound play failed:", e);
-                    playTaskCompleteSoundFallback();
-                }
-            } catch (e) {
-                console.error("Task sound error:", e);
-                // Use device vibration as last resort
-                if ('vibrate' in navigator) {
-                    navigator.vibrate([100, 50, 100]);
-                }
-            }
-        }
-        
-        // Web Audio API fallback for task complete sound
-        function playTaskCompleteSoundFallback() {
-            if (!audioContext) {
-                try {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    audioContext = new AudioContext();
-                } catch (e) {
-                    console.error("Cannot create audio context:", e);
-                    return;
-                }
-            }
-            
-            try {
-                // Make sure context is running
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-                
-                // Create oscillator
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                // Configure the sound (simpler and more reliable)
-                oscillator.type = 'sine';
-                oscillator.frequency.value = 1200; // Higher pitch for completion
-                
-                gainNode.gain.value = 0.3;
-                
-                // Brief sound pattern
-                oscillator.start();
-                
-                // Ramp frequency down for a "complete" effect
-                oscillator.frequency.exponentialRampToValueAtTime(
-                    600, 
-                    audioContext.currentTime + 0.2
-                );
-                
-                // Stop after 0.2 seconds
-                setTimeout(() => {
-                    try {
-                        oscillator.stop();
-                    } catch (e) {
-                        console.warn("Error stopping oscillator:", e);
-                    }
-                }, 200);
-            } catch (e) {
-                console.error("Web Audio API fallback error:", e);
-                // Last resort vibration
-                if ('vibrate' in navigator) {
-                    navigator.vibrate([100, 50, 100]);
-                }
-            }
-        }
-        
-        // Improved alarm sound
-        async function playAlarm() {
-            console.log("Playing alarm...");
-            
-            try {
-                // Try to initialize audio if recent user interaction
-                if (!audioInitialized && Date.now() - lastInteractionTime < 1000) {
-                    await initializeAudio(true);
-                }
-                
-                // Use vibration on mobile
-                if ('vibrate' in navigator) {
-                    navigator.vibrate([500, 200, 500, 200, 500]);
-                }
-                
-                // Try HTML5 Audio first
-                alarmSoundEl.currentTime = 0;
-                alarmSoundEl.volume = 1.0;
-                
-                try {
-                    // Loop for 5 seconds only
-                    alarmSoundEl.loop = false;
-                    
-                    const playPromise = alarmSoundEl.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(error => {
-                            console.warn("Alarm sound playback failed, using fallback:", error);
-                            playAlarmFallback();
-                        });
-                    }
-                } catch (e) {
-                    console.warn("Direct alarm sound play failed:", e);
-                    playAlarmFallback();
-                }
-            } catch (e) {
-                console.error("Alarm sound error:", e);
-                // Last resort: alert
-                if (Date.now() - lastInteractionTime < 3000) {
-                    alert(`⏰ ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
-                }
-            }
-        }
-        
-        // Web Audio API fallback for alarm
-        function playAlarmFallback() {
-            if (!audioContext) {
-                try {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    audioContext = new AudioContext();
-                } catch (e) {
-                    console.error("Cannot create audio context:", e);
-                    return;
-                }
-            }
-            
-            try {
-                // Make sure context is running
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-                
-                // Create a more reliable alarm sound
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                // Configure oscillator
-                oscillator.type = 'square'; // More attention-getting
-                oscillator.frequency.value = 750;
-                
-                gainNode.gain.value = 0.3;
-                
-                // Start oscillator
-                oscillator.start();
-                
-                // Create a simple alarm pattern
-                let counter = 0;
-                const interval = setInterval(() => {
-                    try {
-                        if (counter % 2 === 0) {
-                            oscillator.frequency.value = 750;
-                            gainNode.gain.value = 0.3;
-                        } else {
-                            oscillator.frequency.value = 500;
-                            gainNode.gain.value = 0.1;
-                        }
-                        
-                        counter++;
-                        
-                        // Stop after 8 beeps (4 seconds)
-                        if (counter >= 8) {
-                            clearInterval(interval);
-                            oscillator.stop();
-                        }
-                    } catch (e) {
-                        console.warn("Error in alarm interval:", e);
-                        clearInterval(interval);
-                    }
-                }, 500);
-            } catch (e) {
-                console.error("Web Audio API fallback error:", e);
-                // Last resort: try to use alert if recent user interaction
-                if (Date.now() - lastInteractionTime < 3000) {
-                    alert(`⏰ ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
-                }
-            }
-        }
-        
-        // Enhanced notification function
-        function showNotification(message, duration = 3000) {
-            // Update the notification element
-            notificationEl.textContent = message;
-            notificationEl.classList.add('show');
-            
-            // Clear any existing timeout
-            if (notificationTimeout) {
-                clearTimeout(notificationTimeout);
-            }
-            
-            // Hide after specified duration
-            notificationTimeout = setTimeout(() => {
-                notificationEl.classList.remove('show');
-            }, duration);
-            
-            // Try to vibrate device for better notification
-            if ('vibrate' in navigator) {
-                navigator.vibrate(200);
-            }
-            
-            // Try to show system notification
-            try {
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('ADHS Jetzt-Planer', {
-                        body: message,
-                        vibrate: [200]
+                // Attempt to unlock audio on iOS/Mobile
+                const unlockAudio = function() {
+                    // Create and play a silent sound to unlock audio
+                    const silentSound = new Audio("data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//tAwAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABBwAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUn///////////////////////////////////////////8AAAAATGF2YzU4LjM1AAAAAAAAAAAAAAAAJAQoAAAAAAAABweT6JAiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/7UMQAAAcAVQYBIAAQalTJqABESAAQGnhRCABgQEP5jQAAgFkAi9OCH//CBgyEBQID/LuEeogfP+cEDgQSKjfOCClQMpBHAYLAoBAYCBv//LAwYCAoHAwZEDRoGFQOBhAEBQ3/+XLiRcKxUPP//+/+S4kThxK///////////4kXCsVE60VKpf/////P/////8SLxO//xInFYrHRX///////nRcNAq5JkQuJFw8CgXFYrFRv///////zRcSLxIuGgUCoFF4oJDAUEhdNAokXDwcCgeLxQKBQT/+sJFBIXFAwKBQKBQNAwKCQVDAoJhQKiYuFYqH0uGAoJBQRDgVDwKBUKBQKhgKBQKBQSCgkHwoFA4YCgwFBAcEhQKBQQCAUGAoFBAKiIsHwqHAoFAqGAoFAoFBcSHQKBQSGQoMCogMBQQCggFBIOBQKBQLhUOBQKxUKiYvFBUKiI6P4xXEvI96uXpvj8OMoEctIJdmLIjjJJLqO1tThj8o1l15EMFMvlTWUIkuQsmLQo0eRl7T3/9LdNSteNSNQZcWiT//8H/g//7UMRAAgchZzGsGHGI5zRmtYSOQRgn/O9kVT/iRUff/k1MkAQPB//FnBqXv1LUuLLOxQpw9lz//4Uzxx1ETkTATgA1EYpHAIBIEAAKy5/8YwS5M/3EQIgYLRcBJAwCQAFYlf/4JgQdBEOBYPBCEAwCQAE4df/wTAgxDYQAgEAQDAVAASBgJ//hKFIRBYFN//9vXGCzX+a//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////7UMRAAAcBqB+B1AAI3q0DsPkAAAAAAQFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tSxECB3W3qA4fUAAjQtQAwigAAAABAmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==");
+                    silentSound.play().catch(function(e) {
+                        console.log("Silent sound play failed", e);
                     });
-                }
+                    
+                    // Also try to play and pause our actual audio elements
+                    alarmSoundEl.play().then(function() {
+                        alarmSoundEl.pause();
+                        alarmSoundEl.currentTime = 0;
+                    }).catch(function(e) {
+                        console.log("Alarm sound unlock failed", e);
+                    });
+                    
+                    taskCompleteSoundEl.play().then(function() {
+                        taskCompleteSoundEl.pause();
+                        taskCompleteSoundEl.currentTime = 0;
+                    }).catch(function(e) {
+                        console.log("Task sound unlock failed", e);
+                    });
+                };
+                
+                // Call unlock audio
+                unlockAudio();
+                
+                // Try to set up audio elements for quick playing
+                alarmSoundEl.preload = 'auto';
+                taskCompleteSoundEl.preload = 'auto';
+                
+                // Mark as initialized
+                audioInitialized = true;
+                console.log("Audio initialized successfully");
             } catch (e) {
-                console.warn("System notification failed:", e);
+                console.error("Error initializing audio:", e);
+            }
+        }
+        
+        // Function to play task complete sound
+        function playTaskCompleteSound() {
+            try {
+                // Make sure audio is initialized
+                if (!audioInitialized) {
+                    initAudio();
+                }
+                
+                // Try to use vibration for mobile
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([100, 50, 100]);
+                }
+                
+                // Reset and play the task complete sound
+                taskCompleteSoundEl.currentTime = 0;
+                taskCompleteSoundEl.play().catch(function(e) {
+                    console.log("Task complete sound failed:", e);
+                });
+            } catch (e) {
+                console.error("Error playing task complete sound:", e);
+            }
+        }
+        
+        // Function to play alarm
+        function playAlarm() {
+            try {
+                // Make sure audio is initialized
+                if (!audioInitialized) {
+                    initAudio();
+                }
+                
+                // Try to vibrate the device on mobile
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([300, 100, 300, 100, 300]);
+                }
+                
+                // Reset and play the alarm sound
+                alarmSoundEl.currentTime = 0;
+                alarmSoundEl.play().catch(function(error) {
+                    console.error("Alarm sound playback error:", error);
+                    // Use alert as fallback if audio fails
+                    alert(`ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
+                });
+            } catch (e) {
+                console.error("Error playing alarm:", e);
+                // Use alert as a fallback
+                alert(`ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
             }
         }
         
         // Delete All Activities function
         function deleteAllActivities() {
-            // Update interaction time
-            lastInteractionTime = Date.now();
-            
-            // Initialize audio on user interaction
-            initializeAudio(true);
+            // Try to initialize audio on user interaction
+            initAudio();
             
             if (confirm('Möchtest du wirklich alle Aktivitäten löschen?')) {
                 // Clear the activities array
@@ -1544,44 +1184,24 @@
             // Add event listeners
             const completeBtn = activityEl.querySelector('.complete-btn');
             if (completeBtn) {
-                completeBtn.addEventListener('click', (e) => {
-                    // Update interaction time
-                    lastInteractionTime = Date.now();
-                    // Initialize audio on user interaction
-                    initializeAudio(true);
+                completeBtn.addEventListener('click', function() {
+                    // Try to initialize audio on user interaction
+                    initAudio();
                     completeActivity(activity.id);
-                    e.stopPropagation();
                 });
             }
             
             const revertBtn = activityEl.querySelector('.revert-btn');
             if (revertBtn) {
-                revertBtn.addEventListener('click', (e) => {
-                    // Update interaction time
-                    lastInteractionTime = Date.now();
+                revertBtn.addEventListener('click', function() {
                     revertActivity(activity.id);
-                    e.stopPropagation();
                 });
             }
             
             const deleteBtn = activityEl.querySelector('.delete-btn');
-            deleteBtn.addEventListener('click', (e) => {
-                // Update interaction time
-                lastInteractionTime = Date.now();
+            deleteBtn.addEventListener('click', function() {
                 deleteActivity(activity.id);
-                e.stopPropagation();
             });
-            
-            // Make the whole activity clickable to mark as complete
-            if (!activity.completed) {
-                activityEl.addEventListener('click', () => {
-                    // Update interaction time
-                    lastInteractionTime = Date.now();
-                    // Initialize audio on user interaction
-                    initializeAudio(true);
-                    completeActivity(activity.id);
-                });
-            }
             
             return activityEl;
         }
@@ -1614,11 +1234,8 @@
         }
         
         function addActivity() {
-            // Update interaction time
-            lastInteractionTime = Date.now();
-            
-            // Initialize audio on user interaction
-            initializeAudio(true);
+            // Try to initialize audio on user interaction
+            initAudio();
             
             const activityName = activityNameEl.value.trim();
             const activityDuration = parseInt(activityDurationEl.value);
@@ -1680,9 +1297,6 @@
                 
                 // Render activities
                 renderActivities();
-                
-                // Play a success sound
-                playTestSound();
                 
                 // Show confirmation message
                 showNotification(`"${activityName}" hinzugefügt`, 2000);
@@ -1805,11 +1419,8 @@
         
         // Settings functions
         function saveSettings() {
-            // Update interaction time
-            lastInteractionTime = Date.now();
-            
-            // Initialize audio on user interaction
-            initializeAudio(true);
+            // Try to initialize audio on user interaction
+            initAudio();
             
             state.departureTime = departureTimeEl.value;
             state.alarm.enabled = alarmToggleEl.checked;
@@ -1843,9 +1454,6 @@
             
             // Show notification
             showNotification('Einstellungen gespeichert', 2000);
-            
-            // Play feedback sound
-            playTestSound();
         }
         
         // Schedule alarm
@@ -1884,6 +1492,39 @@
                 playAlarm();
                 showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`, 10000);
             }, timeUntilAlarm * 60 * 1000);
+        }
+        
+        function showNotification(message, duration = 5000) {
+            // In-app notification
+            notificationEl.textContent = message;
+            notificationEl.classList.add('show');
+            
+            // Clear any existing timeout
+            if (notificationTimeout) {
+                clearTimeout(notificationTimeout);
+            }
+            
+            // Hide notification after specified duration (default 5 seconds)
+            notificationTimeout = setTimeout(() => {
+                notificationEl.classList.remove('show');
+            }, duration);
+            
+            // Try to vibrate on mobile
+            if ('vibrate' in navigator) {
+                navigator.vibrate(200);
+            }
+            
+            // Try to show a system notification if permission granted
+            try {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('ADHS Jetzt-Planer', {
+                        body: message,
+                        vibrate: [200]
+                    });
+                }
+            } catch (e) {
+                console.warn("System notification failed:", e);
+            }
         }
         
         // Utility functions
@@ -1974,56 +1615,13 @@
             }
         }
         
-        // Check for audio autoplay support
-        function checkAudioAutoplaySupport() {
-            // Create a short audio element to test
-            const testAudio = new Audio();
-            testAudio.volume = 0.01; // Nearly silent
-            
-            try {
-                // Try to play silently
-                const playPromise = testAudio.play();
-                
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        // Autoplay allowed!
-                        console.log("Autoplay allowed in this browser");
-                        audioUnlockContainerEl.style.display = 'none';
-                        testAudio.pause();
-                        
-                        // Initialize audio since autoplay works
-                        initializeAudio(false);
-                    }).catch(error => {
-                        // Autoplay prevented
-                        console.log("Autoplay prevented:", error);
-                        audioUnlockContainerEl.style.display = 'block';
-                    });
-                } else {
-                    // Play method returned undefined, assume autoplay not supported
-                    console.log("Autoplay likely not supported");
-                    audioUnlockContainerEl.style.display = 'block';
-                }
-            } catch (e) {
-                console.log("Error testing autoplay:", e);
-                audioUnlockContainerEl.style.display = 'block';
-            }
-            
-            // Clean up
-            setTimeout(() => {
-                try {
-                    testAudio.pause();
-                    testAudio.src = '';
-                } catch (e) {}
-            }, 500);
-        }
-        
-        // Check if we need to request Notification permission
-        function checkNotificationPermission() {
+        // Check for notification permissions
+        function checkNotifications() {
             if ('Notification' in window && Notification.permission === 'default') {
-                // We need to ask for permission, but wait for a user interaction
-                document.addEventListener('click', function requestNotificationPermission() {
+                // Wait for user interaction before requesting
+                document.addEventListener('click', function requestPermission() {
                     Notification.requestPermission();
-                    document.removeEventListener('click', requestNotificationPermission);
+                    document.removeEventListener('click', requestPermission);
                 }, { once: true });
             }
         }
@@ -2041,31 +1639,17 @@
             }
         }
         
-        // Check if audio context is suspended on visibility change
-        function handleVisibilityChange() {
-            if (!document.hidden && audioContext && audioContext.state === 'suspended') {
-                audioContext.resume().then(() => {
-                    console.log("AudioContext resumed due to visibility change");
-                }).catch(e => {
-                    console.warn("Failed to resume AudioContext:", e);
-                });
-            }
-        }
-        
-        // Updated initialization with better user interaction handling
-        function initializeApp() {
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
             try {
-                // Setup audio elements
-                setupAudioElements();
+                // Register service worker
+                registerServiceWorker();
+                
+                // Check notifications
+                checkNotifications();
                 
                 // Load saved state
                 loadState();
-                
-                // Check for autoplay support
-                checkAudioAutoplaySupport();
-                
-                // Check notification permission
-                checkNotificationPermission();
                 
                 // Initialize UI
                 departureTimeEl.value = state.departureTime;
@@ -2098,46 +1682,31 @@
                     scheduleAlarm();
                 }
                 
-                // Add unlock audio button handler
-                audioUnlockBtnEl.addEventListener('click', () => {
-                    handleAudioUnlock();
-                });
+                // Event listeners - initialize audio on first interaction
+                document.addEventListener('click', function initOnFirstClick() {
+                    initAudio();
+                    document.removeEventListener('click', initOnFirstClick);
+                }, { once: true });
                 
-                // Event listeners for page activities
-                document.getElementById('show-add-form').addEventListener('click', function(e) {
-                    // Update interaction time
-                    lastInteractionTime = Date.now();
-                    
-                    // Initialize audio on user interaction
-                    initializeAudio(true);
-                    
+                document.getElementById('show-add-form').addEventListener('click', function() {
                     addFormEl.style.display = 'block';
                     activityNameEl.focus();
+                    // Try to initialize audio on user interaction
+                    initAudio();
                 });
                 
-                document.getElementById('cancel-add').addEventListener('click', function(e) {
-                    // Update interaction time
-                    lastInteractionTime = Date.now();
-                    
+                document.getElementById('cancel-add').addEventListener('click', function() {
                     addFormEl.style.display = 'none';
                     activityNameEl.value = '';
                 });
                 
-                document.getElementById('add-activity-btn').addEventListener('click', function(e) {
-                    // Update interaction time and add activity
-                    lastInteractionTime = Date.now();
-                    addActivity();
-                });
-                
+                document.getElementById('add-activity-btn').addEventListener('click', addActivity);
                 document.getElementById('delete-all-btn').addEventListener('click', deleteAllActivities);
                 document.getElementById('save-departure').addEventListener('click', saveSettings);
                 
-                alarmToggleEl.addEventListener('change', function(e) {
-                    // Update interaction time
-                    lastInteractionTime = Date.now();
-                    
-                    // Initialize audio on user interaction
-                    initializeAudio(true);
+                alarmToggleEl.addEventListener('change', function() {
+                    // Try to initialize audio on user interaction
+                    initAudio();
                     
                     state.alarm.enabled = this.checked;
                     
@@ -2161,13 +1730,7 @@
                     saveState();
                 });
                 
-                alarmTimeEl.addEventListener('change', function(e) {
-                    // Update interaction time
-                    lastInteractionTime = Date.now();
-                    
-                    // Initialize audio on user interaction
-                    initializeAudio(true);
-                    
+                alarmTimeEl.addEventListener('change', function() {
                     state.alarm.time = parseInt(this.value);
                     
                     // Clear any existing alarms
@@ -2184,17 +1747,12 @@
                     saveState();
                 });
                 
-                document.getElementById('test-alarm').addEventListener('click', function(e) {
-                    // Update interaction time
-                    lastInteractionTime = Date.now();
+                document.getElementById('test-alarm').addEventListener('click', function() {
+                    // Try to initialize audio on user interaction
+                    initAudio();
                     
-                    // Initialize audio and play alarm
-                    initializeAudio(true).then(() => {
-                        setTimeout(() => {
-                            playAlarm();
-                        }, 100);
-                    });
-                    
+                    // Play the alarm sound
+                    playAlarm();
                     showNotification('Alarm Test!', 3000);
                 });
                 
@@ -2213,9 +1771,6 @@
                 
                 // Listen for visibility change to handle when app comes back into focus
                 document.addEventListener('visibilitychange', function() {
-                    // Handle audio context resume
-                    handleVisibilityChange();
-                    
                     if (!document.hidden) {
                         // App is visible again, update everything
                         updateTimeDisplay();
@@ -2228,38 +1783,8 @@
                     }
                 });
                 
-                // Global touch handler to try to initialize audio
-                document.addEventListener('touchstart', function initAudioOnTouch() {
-                    if (!audioInitialized) {
-                        // Try to initialize audio
-                        initializeAudio(true);
-                    }
-                    // Keep the listener for mobile browsers that might need multiple attempts
-                    if (audioInitialized) {
-                        document.removeEventListener('touchstart', initAudioOnTouch);
-                    }
-                });
-                
-                // Global click handler to try to initialize audio
-                document.addEventListener('click', function initAudioOnClick(e) {
-                    if (!audioInitialized) {
-                        // Try to initialize audio
-                        initializeAudio(true);
-                    }
-                    // Keep the listener for browsers that might need multiple attempts
-                    if (audioInitialized) {
-                        document.removeEventListener('click', initAudioOnClick);
-                    }
-                });
-                
             } catch (e) {
                 console.error("Error initializing app:", e);
                 alert("Es gab ein Problem beim Starten der App. Bitte laden Sie die Seite neu.");
             }
-        }
-        
-        // Initialize app when DOM is ready
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    </script>
-</body>
-</html>
+        });
