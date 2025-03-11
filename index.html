@@ -1,9 +1,154 @@
-<!DOCTYPE html>
+document.getElementById('delete-all-btn').addEventListener('click', deleteAllActivities);        function deleteAllActivities() {
+            // Confirm before deleting all
+            if (confirm('Möchtest du wirklich alle Aktivitäten löschen?')) {
+                // Clear the activities array
+                state.activities = [];
+                
+                // Reset current task index and clear timers
+                state.currentTaskIndex = -1;
+                
+                // Clear any running task timer
+                if (taskCountdownInterval) {
+                    clearInterval(taskCountdownInterval);
+                    taskCountdownInterval = null;
+                }
+                
+                // Hide task countdown
+                taskCountdownEl.style.display = 'none';
+                
+                // Update UI
+                renderActivities();
+                updateTimeSummary();
+                saveState();
+                
+                // Show confirmation
+                showNotification('Alle Aktivitäten wurden gelöscht', 3000);
+            }
+        }            document.getElementById('notification-toggle').addEventListener('change', function() {
+                if (this.checked) {
+                    // Request permission if needed
+                    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === "granted") {
+                                startNotificationTimer();
+                            }
+                        });
+                    } else if ("Notification" in window && Notification.permission === "granted") {
+                        startNotificationTimer();
+                    }
+                } else {
+                    stopNotificationTimer();
+                }
+            });        // Variables for lock screen notifications
+        let notificationTimer = null;
+        let taskNotification = null;
+        
+        // Create a persistent notification that shows current task
+        function createPersistentNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr) {
+            // Only proceed if notification permission is granted
+            if (!("Notification" in window) || Notification.permission !== "granted") {
+                return;
+            }
+
+            // Format time remaining nicely
+            const timeDisplay = `${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            
+            // Use different notification options based on platform
+            const options = {
+                body: `${activity.name}: noch ${timeDisplay} Min (bis ${finishTimeStr})`,
+                icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiM2QjhFMjMiIHJ4PSIxMCIgcnk9IjEwIi8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5ONPC90ZXh0Pjwvc3ZnPg==",
+                tag: 'adhs-task-notification', // This ensures we update existing notification instead of creating new ones
+                renotify: true, // This makes the notification alert the user again even with the same tag
+                silent: true, // Don't play sound for these updates
+                // Add timestamp to make notification more visible on some platforms
+                timestamp: Date.now()
+            };
+
+            // Create/update the notification
+            if (taskNotification) {
+                // Some browsers support updating existing notifications
+                if (taskNotification.close) {
+                    taskNotification.close();
+                }
+            }
+            
+            taskNotification = new Notification("ADHS Planer", options);
+        }
+
+        // Update task notification
+        function updateTaskNotification() {
+            // Only create notification if task countdown is visible
+            if (taskCountdownEl.style.display !== 'none' && state.currentTaskIndex !== -1) {
+                const activity = state.activities[state.currentTaskIndex];
+                if (!activity || activity.completed) return;
+
+                const now = new Date();
+                const endTime = new Date(activity.endTime);
+                const remainingMs = endTime - now;
+                
+                if (remainingMs <= 0) return;
+                
+                const remainingMinutes = Math.floor(remainingMs / 60000);
+                const remainingSeconds = Math.floor((remainingMs % 60000) / 1000);
+                const finishTimeStr = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+                
+                createPersistentNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr);
+            }
+        }
+
+        function startNotificationTimer() {
+            if (notificationTimer) {
+                clearInterval(notificationTimer);
+            }
+            
+            // Update notification every 15 seconds
+            notificationTimer = setInterval(updateTaskNotification, 15000);
+            
+            // Also update immediately
+            updateTaskNotification();
+        }
+
+        function stopNotificationTimer() {
+            if (notificationTimer) {
+                clearInterval(notificationTimer);
+                notificationTimer = null;
+            }
+            
+            // Clear any existing notification
+            if (taskNotification && taskNotification.close) {
+                taskNotification.close();
+            }
+        }                <div class="setting-row">
+                    <div>Lock-Screen Benachrichtigungen 
+                        <span class="alarm-icon">📱</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="notification-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div><!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#556B2F">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
     <title>ADHS Jetzt-Planer</title>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
     <style>
         :root {
             --olive-dark: #556B2F;
@@ -439,7 +584,10 @@
         
         <div class="activities-header">
             <h2>Meine Aktivitäten</h2>
-            <button class="add-btn" id="show-add-form">+ Aktivität</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="add-btn" id="show-add-form">+ Aktivität</button>
+                <button class="add-btn" id="delete-all-btn" style="background-color: #CD5C5C;">Alle löschen</button>
+            </div>
         </div>
         
         <div class="add-form" id="add-form" style="display: none;">
@@ -821,6 +969,9 @@
             
             if (state.activities.length === 0) {
                 activityListEl.innerHTML = '<div class="no-activities">Keine Aktivitäten geplant. Füge eine hinzu!</div>';
+                
+                // Hide task countdown when no activities
+                taskCountdownEl.style.display = 'none';
                 return;
             }
             
@@ -941,10 +1092,8 @@
                     activity.orderIndex = index;
                 });
                 
-                // Reset current task index if needed
-                if (state.currentTaskIndex >= state.activities.length) {
-                    state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
-                }
+                // Reset current task index and find the next non-completed task
+                state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
                 
                 // Update UI
                 renderActivities();
@@ -1257,15 +1406,46 @@
             try {
                 const savedState = localStorage.getItem('adhsJetztPlaner');
                 if (savedState) {
-                    state = JSON.parse(savedState);
+                    // Parse saved state
+                    const parsedState = JSON.parse(savedState);
+                    
+                    // Make sure activities is an array
+                    if (!Array.isArray(parsedState.activities)) {
+                        parsedState.activities = [];
+                    }
+                    
+                    // Convert date strings back to Date objects
+                    parsedState.activities.forEach(activity => {
+                        if (activity.endTime) {
+                            activity.endTime = new Date(activity.endTime);
+                        }
+                    });
+                    
+                    // Use the parsed state
+                    state = parsedState;
                     
                     // Handle older versions of state
-                    if (!state.currentTaskIndex) {
+                    if (state.currentTaskIndex === undefined) {
                         state.currentTaskIndex = -1;
+                    }
+                    
+                    // Validate current task index
+                    if (state.currentTaskIndex >= state.activities.length) {
+                        state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
                     }
                 }
             } catch (e) {
                 console.log('Error loading from localStorage:', e);
+                // If there's an error, reset to defaults
+                state = {
+                    activities: [],
+                    departureTime: '14:30',
+                    alarm: {
+                        enabled: true,
+                        time: 15
+                    },
+                    currentTaskIndex: -1
+                };
             }
         }
         
@@ -1273,8 +1453,16 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Request notification permission early
             if ("Notification" in window) {
-                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                    Notification.requestPermission();
+                if (Notification.permission === "granted") {
+                    // Already have permission
+                    startNotificationTimer();
+                } else if (Notification.permission !== "denied") {
+                    // Request permission and start timer if granted
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") {
+                            startNotificationTimer();
+                        }
+                    });
                 }
             }
             
@@ -1385,8 +1573,13 @@
             
             // Listen for visibility change to handle when app comes back into focus
             document.addEventListener('visibilitychange', function() {
-                if (!document.hidden) {
-                    // App is visible again, update everything
+                if (document.hidden) {
+                    // Page is hidden (in background or screen locked)
+                    // Ensure notification is showing when screen locks
+                    updateTaskNotification();
+                } else {
+                    // Page is visible again
+                    // Continue normal updates
                     updateTimeDisplay();
                     updateTimeSummary();
                     
