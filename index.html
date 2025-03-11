@@ -823,10 +823,12 @@
     
     <!-- Embedded audio files using data URIs -->
     <audio id="alarm-sound">
+        <!-- Fallback beep sound as data URI -->
         <source src="data:audio/wav;base64,UklGRuYCAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YcICAACAgICAgICAgICAgICAgICAgICAgICAgICAf3hxeH+AfXR1gIqAfHF0gIyFfG10f4+HeWpxeIqPgXBtD3WSkIN2ZmBygpOKf29eWm2JmI99b1lUY32Sk4d7Z1lWX3iUkGdjVlVid26Nj3VlZVtldGaCjnBnY1lheHR8gG9tbWJjbnF3eXt1dG1tbXEQfX16eXh5c3F1eX19fXz9weTtxQAAABURGiIeMzEhHRYNABUdJCYmJB8aEgwID4WdoKGnnDEhFQ0GBwUhLjk9QTs2MkBCQkA7PDw8OTY7PkBCRUhKSUpJRkA3FyYnKS0vMjQ1OTs9Pj9AQUFCQ0RFRkdISUpLp6SpqqmoqKioqKipqaqsrq+wsbKys7S0tba3t7i4uLm5urq7u7y8vb29vr6/v7/AwMDAwMDBwcHBwcHBwsLCwsLCwcHBwcHBwcHBwcHCwsLDw8TFxsfIyMnJysvLy8vMzMzMzM3Nzc3Nzc3Nzc3Nzc3Ozs7Ozs7Pz8/Pz8/Pz8/Pzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs/Pz8/Pz8/Pz8/Pz8/P0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQAzpcbAQDMxgKBStUIwMJJg8CBhkYCQQIEQoDChIOBAUREAoDDBMMBQwSEQ0GCxIPBwsQEQsHDRIPCQoQEQ0ICxIQCgkOEQ8KCQ8RDggMEBAMCA0RDwkLDxAOCQsQEAwJDRAQCwkOEQ8LCg0RDwsKDxAPCwoOEA8MCQ8QDgsJDxAOCwoPEA8LCg4QDwsKDhAPCwoOEA8LCg4QDwsKDhAPCwkPEA4LCQ8QDgsJDxAOCwkPEA4LCQ8QDgsJDhEOCwkOEQ4KCg4RDgoKDhEOCgoPEA8KCg8QDwoKDxAPCgoPEA8KCg8QDwoKDhEOCgkPEA4KCQ8QDgoJDxAOCgkPEA4KCQ8QDgoJDxAOCgkPEA4KCQ8QDgoJDhEOCQoOEQ4JCg4RDgkKDhEOCQkPEA4JCQ8QDgkJDxAOCQkPEA4JCQ8QDgkJDxAOCQkPEA4JCQ4RDgkJDhEOCQkOEQ4JCQ4RDgkJDhEOCQkOEQ4JCQ4RDgkIDxAOCQgPEA4JCA8QDgkIDxAOCQgPEA4JCA8QDgkIDhEOCAgOEQ4ICA4RDggIDhEOCAgOEQ4ICA4RDggIDhEOCAgOEQ4ICA4RDggHDxAOCAcPEA4IBw8QDggHDxAOCAcPEA4IBw8QDggHDhEOBwgOEQ4HCA4RDgcIDhEOBwgOEQ4HCA4RDgcIDhEOBwgOEQ4HBw8QDgcHDxAOBwcPEA4HBw8QDgcHDxAOBwcPEA4HBw4RDgcHDhEOBwcOEQ4HBw4RDgcHDhEOBwcOEQ4HBw4RDgYIDhEOBgcPEA4GBw8QDgYHDxAOBgcPEA4GBw8QDgYHDhEOBgcOEQ4GBw4RDgYHDhEOBgcOEQ4GBw4RDgYHDhEOBgYPEA4GBg8QDgYGDxAOBgYPEA4GBg8QDgYGDxAOBgYOEQ4GBg4RDgYGDhEOBgYOEQ3///9a" type="audio/wav">
     </audio>
     
     <audio id="task-complete-sound">
+        <!-- Task complete sound as data URI (short beep) -->
         <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAB4eHh4eHiIiJiYmGhoaFhYSEg4OCgoGBgICAAAAAA=" type="audio/wav">
     </audio>
 
@@ -985,6 +987,10 @@
             
             // Show the task countdown with a brief highlight
             taskCountdownEl.style.display = 'block';
+            taskCountdownEl.style.backgroundColor = '#3CB371'; // Green highlight
+            setTimeout(() => {
+                taskCountdownEl.style.backgroundColor = ''; // Reset color
+            }, 1500);
             
             // Start the interval to update the countdown
             taskCountdownInterval = setInterval(updateTaskCountdown, 1000);
@@ -1012,6 +1018,12 @@
                 const now = new Date();
                 const endTime = new Date(now.getTime() + (nextActivity.duration * 60 * 1000));
                 nextActivity.endTime = endTime;
+                
+                // Highlight the transition to a new task
+                taskCountdownEl.style.backgroundColor = '#3CB371'; // Green to indicate new task
+                setTimeout(() => {
+                    taskCountdownEl.style.backgroundColor = ''; // Reset after 2 seconds
+                }, 2000);
                 
                 // Save state to persist the endTime
                 saveState();
@@ -1084,9 +1096,9 @@
             
             // Change color when less than 1 minute remains
             if (remainingMs < 60000) {
-                taskCountdownEl.style.background = 'linear-gradient(to right, #d50000, #ff1744)';
+                taskCountdownEl.style.backgroundColor = '#FF4136'; // Bright red for urgency
             } else {
-                taskCountdownEl.style.background = '';
+                taskCountdownEl.style.backgroundColor = '';
             }
         }
         
@@ -1426,10 +1438,10 @@
             // Update countdown
             if (availableTime <= 0) {
                 countdownEl.textContent = 'Zeit zum Ausgehen!';
-                countdownEl.style.background = 'linear-gradient(to right, #d50000, #ff1744)';
+                countdownEl.style.backgroundColor = '#CD5C5C';
             } else {
                 countdownEl.textContent = `Du musst in ${formatTimeSpan(availableTime)} rausgehen`;
-                countdownEl.style.background = '';
+                countdownEl.style.backgroundColor = '';
             }
         }
         
