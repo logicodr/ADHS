@@ -712,17 +712,16 @@
                 playTaskCompleteSound();
                 showNotification(`Zeit abgelaufen für: ${activity.name}`, 5000);
                 
-                // Show task completed notification
-                if (Notification.permission === 'granted') {
-                    sendTaskNotification(
-                        'Aufgabe abgeschlossen!', 
-                        {
+                // Try to show notification but don't break app if it fails
+                try {
+                    if (isNotificationSupported() && Notification.permission === 'granted') {
+                        new Notification('Aufgabe abgeschlossen!', {
                             body: `${activity.name} ist fertig!`,
-                            icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIGZpbGw9IiMzQTVGMEIiIHJ4PSIyMCIgcnk9IjIwIi8+PHRleHQgeD0iNjQiIHk9IjgwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNTAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7inIU8L3RleHQ+PC9zdmc+',
-                            tag: 'task-complete',
-                            vibrate: [200, 100, 200]
-                        }
-                    );
+                            tag: 'task-complete'
+                        });
+                    }
+                } catch (e) {
+                    console.error('Failed to show task completion notification:', e);
                 }
                 
                 // Auto-complete the task
@@ -774,9 +773,14 @@
             
             taskCountdownEl.textContent = `${taskPrefix}${activity.name}: noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`;
             
-            // Update notification on lock screen every minute
-            if (remainingSeconds === 0 || remainingMs <= 60000) {
-                updateTaskNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr);
+            // Try to update notification on lock screen every minute (not critical for app function)
+            try {
+                if ((remainingSeconds === 0 || remainingMs <= 60000) && isNotificationSupported()) {
+                    updateTaskNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr);
+                }
+            } catch (e) {
+                console.error('Error updating notification:', e);
+                // Continue even if notification fails
             }
             
             // Change color when less than 1 minute remains
@@ -1250,18 +1254,16 @@
                 playAlarm();
                 showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`, 10000);
                 
-                // Also send system notification if permissions granted
-                if (Notification.permission === 'granted') {
-                    sendTaskNotification(
-                        'Zeit zum Ausgehen!', 
-                        {
+                // Try to show system notification but don't break app if it fails
+                try {
+                    if (isNotificationSupported() && Notification.permission === 'granted') {
+                        new Notification('Zeit zum Ausgehen!', {
                             body: `In ${state.alarm.time} Minuten musst du rausgehen!`,
-                            icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIGZpbGw9IiNDRDVDNUMiIHJ4PSIyMCIgcnk9IjIwIi8+PHRleHQgeD0iNjQiIHk9IjgwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNTAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imIc8L3RleHQ+PC9zdmc+',
-                            tag: 'departure-alarm',
-                            vibrate: [300, 100, 300, 100, 300],
-                            requireInteraction: true  // Keep notification until user dismisses it
-                        }
-                    );
+                            tag: 'departure-alarm'
+                        });
+                    }
+                } catch (e) {
+                    console.error('Failed to show departure notification:', e);
                 }
             }, timeUntilAlarm * 60 * 1000);
         }
@@ -1369,102 +1371,104 @@
             }
         }
         
-        // Notification functions
+        // Notification functions - with robust error handling
         let notificationPermissionRequested = false;
         let taskNotification = null;
         
+        function isNotificationSupported() {
+            return 'Notification' in window && 'serviceWorker' in navigator;
+        }
+        
         function requestNotificationPermission() {
-            if (!('Notification' in window)) {
-                console.log('Notifications not supported in this browser');
+            if (!isNotificationSupported()) {
+                showNotification('Benachrichtigungen werden auf diesem Gerät nicht unterstützt.', 3000);
                 return Promise.resolve(false);
             }
             
             if (Notification.permission === 'granted') {
+                showNotification('Benachrichtigungen sind bereits aktiviert!', 3000);
                 return Promise.resolve(true);
             }
             
             if (Notification.permission === 'denied') {
-                console.log('Notification permission was denied before');
+                showNotification('Benachrichtigungen wurden blockiert. Bitte ändere die Einstellungen deines Browsers.', 5000);
                 return Promise.resolve(false);
             }
             
             notificationPermissionRequested = true;
             
-            return Notification.requestPermission()
-                .then(permission => {
-                    if (permission === 'granted') {
-                        showNotification('Benachrichtigungen aktiviert!', 3000);
-                        return true;
-                    } else {
-                        console.log('Notification permission denied');
+            try {
+                return Notification.requestPermission()
+                    .then(permission => {
+                        if (permission === 'granted') {
+                            showNotification('Benachrichtigungen aktiviert!', 3000);
+                            return true;
+                        } else {
+                            showNotification('Benachrichtigungen wurden nicht erlaubt.', 3000);
+                            return false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error requesting notification permission:', error);
                         return false;
-                    }
-                });
+                    });
+            } catch (e) {
+                console.error('Error in requestNotificationPermission:', e);
+                return Promise.resolve(false);
+            }
         }
         
         function sendTaskNotification(title, options) {
-            // Check if service worker is available and registered
-            if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-                console.log('Service worker not available for notifications');
-                return;
+            try {
+                // Simple check if notifications are supported and allowed
+                if (!isNotificationSupported() || Notification.permission !== 'granted') {
+                    return;
+                }
+                
+                // Try to create a simple notification
+                new Notification(title, options);
+            } catch (e) {
+                console.error('Failed to create notification:', e);
             }
-            
-            // Close any existing notification
-            if (taskNotification) {
-                taskNotification.close();
-                taskNotification = null;
-            }
-            
-            // Create new notification
-            navigator.serviceWorker.ready.then(registration => {
-                registration.showNotification(title, options)
-                    .then(() => {
-                        console.log('Task notification sent');
-                    })
-                    .catch(error => {
-                        console.error('Error sending notification:', error);
-                    });
-            });
         }
         
         function updateTaskNotification(activity, remainingMinutes, remainingSeconds, finishTimeStr) {
-            if (Notification.permission !== 'granted') {
-                return; // No permission, no notification
+            try {
+                if (!isNotificationSupported() || Notification.permission !== 'granted') {
+                    return;
+                }
+                
+                const title = `${activity.name}`;
+                const options = {
+                    body: `Noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`,
+                    tag: 'current-task'
+                };
+                
+                // Send the notification
+                sendTaskNotification(title, options);
+            } catch (e) {
+                console.error('Error in updateTaskNotification:', e);
+                // Errors here shouldn't affect the core app functionality
             }
-            
-            const title = `${activity.name}`;
-            const options = {
-                body: `Noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`,
-                icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIGZpbGw9IiM2QjhFMjMiIHJ4PSIyMCIgcnk9IjIwIi8+PHRleHQgeD0iNjQiIHk9IjgwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNTAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5ONPC90ZXh0Pjwvc3ZnPg==',
-                badge: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIGZpbGw9IiM2QjhFMjMiIHJ4PSIyMCIgcnk9IjIwIi8+PHRleHQgeD0iNjQiIHk9IjgwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNTAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5ONPC90ZXh0Pjwvc3ZnPg==',
-                tag: 'current-task',
-                renotify: true,
-                silent: true,  // No sound for updates
-                // For Android, we need to use actions
-                actions: [
-                    {
-                        action: 'complete',
-                        title: '✓ Erledigt'
-                    }
-                ]
-            };
-            
-            // Send the notification
-            sendTaskNotification(title, options);
         }
         
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
             try {
-                // Register service worker for notifications
+                // Try to register service worker but don't halt app if it fails
                 if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('service-worker.js')
-                        .then(registration => {
-                            console.log('Service Worker registered with scope:', registration.scope);
-                        })
-                        .catch(error => {
-                            console.error('Service Worker registration failed:', error);
-                        });
+                    try {
+                        navigator.serviceWorker.register('service-worker.js')
+                            .then(registration => {
+                                console.log('Service Worker registered');
+                            })
+                            .catch(error => {
+                                console.error('Service Worker registration failed, continuing without notifications');
+                            });
+                    } catch (e) {
+                        console.error('Error setting up service worker:', e);
+                        // Continue app initialization even if service worker fails
+                    }
                 }
                 
                 // Load saved state
@@ -1499,10 +1503,16 @@
                 // Set up alarm if enabled
                 scheduleAlarm();
                 
-                // Request notification permission after a short delay
+                // Request notification permission after a short delay - only if supported
                 setTimeout(() => {
-                    if (!notificationPermissionRequested && state.activities.length > 0) {
-                        requestNotificationPermission();
+                    try {
+                        if (isNotificationSupported() && !notificationPermissionRequested && state.activities.length > 0) {
+                            // Just check if we might need to request permissions, but don't actually do it
+                            // Let the user explicitly request via button instead
+                            console.log("Notification permission may be needed for lock screen updates");
+                        }
+                    } catch (e) {
+                        console.error("Error checking notification status:", e);
                     }
                 }, 3000);
                 
@@ -1522,15 +1532,19 @@
                 document.getElementById('save-departure').addEventListener('click', saveSettings);
                 document.getElementById('reset-app').addEventListener('click', resetApp);
                 
-                // Add notification permission button
+                // Set notification button visibility based on browser support
                 const resetContainer = document.querySelector('.reset-container');
-                const notificationBtn = document.createElement('button');
-                notificationBtn.className = 'reset-btn';
-                notificationBtn.style.marginTop = '10px';
-                notificationBtn.style.backgroundColor = '#6B8E23';
-                notificationBtn.innerHTML = '<span class="reset-icon">🔔</span> Benachrichtigungen aktivieren';
-                notificationBtn.addEventListener('click', requestNotificationPermission);
-                resetContainer.appendChild(notificationBtn);
+                
+                // Only show notification button if the browser supports it
+                if (isNotificationSupported()) {
+                    const notificationBtn = document.createElement('button');
+                    notificationBtn.className = 'reset-btn';
+                    notificationBtn.style.marginTop = '10px';
+                    notificationBtn.style.backgroundColor = '#6B8E23';
+                    notificationBtn.innerHTML = '<span class="reset-icon">🔔</span> Benachrichtigungen aktivieren';
+                    notificationBtn.addEventListener('click', requestNotificationPermission);
+                    resetContainer.appendChild(notificationBtn);
+                }
                 
                 alarmToggleEl.addEventListener('change', function() {
                     state.alarm.enabled = this.checked;
