@@ -4,156 +4,233 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADHS Jetzt-Planer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --olive-dark: #556B2F;
-            --olive-medium: #6B8E23;
-            --olive-light: #9ACD32;
-            --olive-pale: #E8F0D8;
-            --cream: #FFFAF0;
-            --terracotta: #CD5C5C;
-            --bg-color: #F8F9F5;
-            --text-color: #33402C;
-            --success-color: #3A5F0B;
-            --warning-color: #B59410;
+            --primary: #5D9C59;
+            --primary-dark: #4a7d48;
+            --primary-light: #a5d6a7;
+            --primary-bg: #f0f7ef;
+            --text: #2C3333;
+            --text-light: #4E6E5D;
+            --warning: #FFC436;
+            --danger: #FF6969;
+            --success: #4CAF50;
+            --gray-light: #F5F5F5;
+            --gray: #E0E0E0;
+            --white: #FFFFFF;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
         
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--gray-light);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-tap-highlight-color: transparent;
+            padding: 0;
             margin: 0;
-            padding: 15px;
-            line-height: 1.5;
         }
         
-        .container {
-            max-width: 500px;
+        .app-container {
+            max-width: 600px;
             margin: 0 auto;
+            padding: 16px;
         }
         
-        .header {
+        /* Header Styles */
+        .app-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            background-color: var(--white);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: var(--shadow);
         }
         
-        .header h1 {
-            font-size: 1.4rem;
-            color: var(--olive-dark);
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-dark);
             margin: 0;
         }
         
         .current-time {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--olive-dark);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            background-color: var(--primary-bg);
+            padding: 8px 12px;
+            border-radius: 12px;
         }
         
+        /* Countdown Styles */
         .countdown {
-            background-color: var(--olive-medium);
+            background-color: var(--primary);
             color: white;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 16px;
             text-align: center;
-            font-weight: bold;
-            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
         }
         
         .task-countdown {
-            background-color: var(--terracotta);
+            background-color: var(--danger);
             color: white;
-            padding: 8px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 16px;
             text-align: center;
-            font-weight: bold;
-            margin-top: 5px;
-            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
             display: none;
         }
         
+        /* Time Summary Styles */
         .time-summary {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
         }
         
         .time-box {
-            flex: 1;
-            background-color: var(--cream);
-            border-radius: 8px;
-            padding: 10px;
+            background-color: var(--white);
+            border-radius: 16px;
+            padding: 16px;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         
         .time-box-label {
-            font-size: 0.85rem;
-            color: #6c757d;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 6px;
         }
         
         .time-box-value {
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin-top: 4px;
-            color: var(--olive-dark);
-        }
-        
-        .buffer-time {
-            color: var(--success-color);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-dark);
         }
         
         .buffer-time.warning {
-            color: var(--warning-color);
+            color: var(--warning);
         }
         
         .buffer-time.danger {
-            color: var(--terracotta);
+            color: var(--danger);
+        }
+        
+        /* Activities Header Styles */
+        .activities-section {
+            background-color: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
         }
         
         .activities-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
         }
         
-        .activities-header h2 {
-            font-size: 1.1rem;
+        .activities-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-dark);
             margin: 0;
-            color: var(--olive-dark);
         }
         
-        .add-btn {
-            background-color: var(--olive-medium);
-            color: white;
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
             border: none;
-            border-radius: 4px;
-            padding: 6px 12px;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 600;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, transform 0.1s;
+            font-size: 0.95rem;
         }
         
+        .btn:active {
+            transform: scale(0.97);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #e05d5d;
+        }
+        
+        /* Add Form Styles */
         .add-form {
-            background-color: var(--cream);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: var(--primary-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: none;
         }
         
         .form-row {
             display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
+            gap: 12px;
+            margin-bottom: 16px;
         }
         
         .form-input {
-            padding: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 0.95rem;
-            background-color: white;
+            padding: 12px;
+            border: 1px solid var(--gray);
+            border-radius: 12px;
+            font-size: 1rem;
+            width: 100%;
+            background-color: var(--white);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(93, 156, 89, 0.2);
         }
         
         .form-input-name {
@@ -161,141 +238,151 @@
         }
         
         .form-input-duration {
-            width: 70px;
+            width: 80px;
         }
         
-        .form-btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .add-activity-btn {
-            background-color: var(--success-color);
-            color: white;
-        }
-        
-        .cancel-btn {
-            background-color: #f8f9fa;
-            color: var(--text-color);
-        }
-        
+        /* Activity List Styles */
         .activity {
             display: flex;
             align-items: center;
-            background-color: var(--cream);
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: var(--white);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            border-left: 4px solid transparent;
+            transition: all 0.2s;
         }
         
         .activity.current {
-            border-left: 4px solid var(--terracotta);
+            border-left: 4px solid var(--danger);
             background-color: #FFF7F5;
         }
         
         .activity.completed {
-            opacity: 0.7;
+            opacity: 0.75;
             text-decoration: line-through;
-            background-color: var(--olive-pale);
-            border-left: 4px solid var(--success-color);
+            background-color: #F8FBF8;
+            border-left: 4px solid var(--success);
         }
         
         .activity-time {
-            font-weight: bold;
-            width: 55px;
+            font-weight: 700;
+            width: 52px;
             font-size: 0.9rem;
+            color: var(--text-light);
         }
         
         .activity-name {
             flex: 1;
-            padding: 0 8px;
+            padding: 0 12px;
+            word-break: break-word;
         }
         
         .activity-duration {
-            color: #6c757d;
-            font-size: 0.9rem;
-            width: 45px;
-            text-align: right;
+            background-color: var(--primary-bg);
+            color: var(--primary-dark);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 8px;
+            margin-right: 12px;
+            white-space: nowrap;
         }
         
         .activity-actions {
             display: flex;
-            gap: 4px;
-            margin-left: 8px;
+            gap: 8px;
         }
         
         .activity-btn {
             border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 4px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 1.1rem;
+            transition: background-color 0.2s;
         }
         
         .complete-btn {
-            background-color: var(--olive-pale);
-            color: var(--success-color);
+            background-color: #E8F5E9;
+            color: var(--success);
+        }
+        
+        .complete-btn:hover {
+            background-color: #C8E6C9;
         }
         
         .revert-btn {
             background-color: #FFF8E1;
-            color: var(--warning-color);
+            color: var(--warning);
+        }
+        
+        .revert-btn:hover {
+            background-color: #FFECB3;
         }
         
         .delete-btn {
-            background-color: #FFE8E8;
-            color: var(--terracotta);
+            background-color: #FFEBEE;
+            color: var(--danger);
+        }
+        
+        .delete-btn:hover {
+            background-color: #FFCDD2;
         }
         
         .no-activities {
             text-align: center;
-            color: #6c757d;
-            padding: 20px 0;
+            color: var(--text-light);
+            padding: 30px 0;
+            font-size: 1rem;
         }
         
-        .departure-setting {
-            background-color: var(--cream);
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        /* Settings Styles */
+        .settings-section {
+            background-color: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+        
+        .settings-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 16px;
         }
         
         .setting-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--gray);
         }
         
-        .save-btn {
-            background-color: var(--olive-medium);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 6px 12px;
-            cursor: pointer;
-            margin-top: 10px;
+        .setting-row:last-of-type {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
         }
         
-        .alarm-settings {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
+        .setting-label {
+            font-weight: 500;
         }
         
+        /* Alarm Toggle Switch */
         .switch {
             position: relative;
             display: inline-block;
-            width: 50px;
-            height: 24px;
+            width: 52px;
+            height: 28px;
         }
         
         .switch input {
@@ -311,16 +398,16 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc;
+            background-color: var(--gray);
             transition: .4s;
-            border-radius: 24px;
+            border-radius: 28px;
         }
         
         .slider:before {
             position: absolute;
             content: "";
-            height: 16px;
-            width: 16px;
+            height: 20px;
+            width: 20px;
             left: 4px;
             bottom: 4px;
             background-color: white;
@@ -329,21 +416,21 @@
         }
         
         input:checked + .slider {
-            background-color: var(--olive-medium);
+            background-color: var(--primary);
         }
         
         input:checked + .slider:before {
-            transform: translateX(26px);
+            transform: translateX(24px);
         }
         
         .alarm-icon {
-            margin-left: 5px;
+            margin-left: 8px;
             font-size: 1.1rem;
-            color: var(--terracotta);
+            color: var(--warning);
         }
         
         .alarm-options {
-            margin-top: 10px;
+            margin-top: 16px;
             display: none;
         }
         
@@ -352,65 +439,60 @@
         }
         
         .test-alarm-btn {
-            background-color: var(--terracotta);
+            background-color: var(--warning);
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            font-size: 0.8rem;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
             margin-left: 10px;
         }
         
-        /* Notification styles */
+        /* Notification Styles */
         .notification {
             position: fixed;
             bottom: -100px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: var(--terracotta);
+            background-color: var(--primary-dark);
             color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
             z-index: 1000;
             transition: bottom 0.3s ease-in-out;
             text-align: center;
-            font-weight: bold;
-            max-width: 80%;
-            width: 300px;
+            font-weight: 600;
+            max-width: 90%;
+            width: 340px;
         }
         
         .notification.show {
             bottom: 20px;
         }
         
-        /* Mobile specific styles */
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
+        /* Media queries for larger screens */
+        @media (min-width: 600px) {
+            .app-container {
+                padding: 24px;
             }
             
-            .activity-btn {
-                width: 36px;
-                height: 36px;
-                font-size: 1.2rem;
+            .time-summary {
+                gap: 16px;
             }
             
-            .form-input {
-                font-size: 16px; /* Prevents iOS zoom on focus */
-            }
-            
-            .notification {
-                width: 90%;
+            .app-header, .countdown, .task-countdown, .activities-section, .settings-section {
+                border-radius: 20px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>ADHS Jetzt-Planer</h1>
+    <div class="app-container">
+        <div class="app-header">
+            <h1 class="app-title">ADHS Jetzt-Planer</h1>
             <div class="current-time" id="current-time">12:30</div>
         </div>
         
@@ -437,64 +519,67 @@
             </div>
         </div>
         
-        <div class="activities-header">
-            <h2>Meine Aktivitäten</h2>
-            <div style="display: flex; gap: 8px;">
-                <button class="add-btn" id="show-add-form">+ Aktivität</button>
-                <button class="add-btn" id="delete-all-btn" style="background-color: #CD5C5C;">Alle löschen</button>
+        <div class="activities-section">
+            <div class="activities-header">
+                <h2 class="activities-title">Meine Aktivitäten</h2>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="show-add-form">+ Aktivität</button>
+                    <button class="btn btn-danger" id="delete-all-btn">Alle löschen</button>
+                </div>
+            </div>
+            
+            <div class="add-form" id="add-form">
+                <div class="form-row">
+                    <input type="text" class="form-input form-input-name" id="activity-name" placeholder="Was willst du tun?">
+                    <input type="number" class="form-input form-input-duration" id="activity-duration" placeholder="Min" value="10" min="1" max="180">
+                </div>
+                <div class="form-row">
+                    <button class="btn btn-primary" id="add-activity-btn">Hinzufügen</button>
+                    <button class="btn" id="cancel-add">Abbrechen</button>
+                </div>
+            </div>
+            
+            <div id="activity-list">
+                <!-- Activities will be dynamically added here -->
             </div>
         </div>
         
-        <div class="add-form" id="add-form" style="display: none;">
-            <div class="form-row">
-                <input type="text" class="form-input form-input-name" id="activity-name" placeholder="Was willst du tun?">
-                <input type="number" class="form-input form-input-duration" id="activity-duration" placeholder="Min" value="10" min="1" max="180">
-            </div>
-            <div class="form-row">
-                <button class="form-btn add-activity-btn" id="add-activity-btn">Hinzufügen</button>
-                <button class="form-btn cancel-btn" id="cancel-add">Abbrechen</button>
-            </div>
-        </div>
-        
-        <div id="activity-list">
-            <!-- Activities will be dynamically added here -->
-        </div>
-        
-        <div class="departure-setting">
+        <div class="settings-section">
+            <h2 class="settings-title">Einstellungen</h2>
+            
             <div class="setting-row">
-                <div>Wann musst du rausgehen?</div>
+                <div class="setting-label">Wann musst du rausgehen?</div>
                 <input type="time" class="form-input" id="departure-time" value="14:30">
             </div>
             
-            <div class="alarm-settings">
-                <div class="setting-row">
-                    <div>Alarm aktivieren 
-                        <span class="alarm-icon">🔔</span>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="alarm-toggle" checked>
-                        <span class="slider"></span>
-                    </label>
+            <div class="setting-row">
+                <div class="setting-label">
+                    Alarm aktivieren 
+                    <span class="alarm-icon">🔔</span>
                 </div>
-                
-                <div class="alarm-options visible" id="alarm-options">
-                    <div class="setting-row">
-                        <div>Alarm-Zeit vor Ausgehen:</div>
-                        <div>
-                            <select class="form-input" id="alarm-time">
-                                <option value="5">5 Minuten</option>
-                                <option value="10">10 Minuten</option>
-                                <option value="15" selected>15 Minuten</option>
-                                <option value="30">30 Minuten</option>
-                                <option value="60">1 Stunde</option>
-                            </select>
-                            <button class="test-alarm-btn" id="test-alarm">Test</button>
-                        </div>
+                <label class="switch">
+                    <input type="checkbox" id="alarm-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="alarm-options visible" id="alarm-options">
+                <div class="setting-row">
+                    <div class="setting-label">Alarm-Zeit vor Ausgehen:</div>
+                    <div>
+                        <select class="form-input" id="alarm-time">
+                            <option value="5">5 Minuten</option>
+                            <option value="10">10 Minuten</option>
+                            <option value="15" selected>15 Minuten</option>
+                            <option value="30">30 Minuten</option>
+                            <option value="60">1 Stunde</option>
+                        </select>
+                        <button class="test-alarm-btn" id="test-alarm">Test</button>
                     </div>
                 </div>
             </div>
             
-            <button class="save-btn" id="save-departure">Einstellungen speichern</button>
+            <button class="btn btn-primary" id="save-departure">Einstellungen speichern</button>
         </div>
     </div>
     
@@ -502,7 +587,7 @@
         Zeit zum Ausgehen!
     </div>
     
-    <!-- Audio Element für den Alarm - with local file -->
+    <!-- Audio Element für den Alarm -->
     <audio id="alarm-sound">
         <source src="uplifting-intro-music-for-youtube-and-podcasts-by-joshua-wales-292600.mp3" type="audio/mpeg">
         Dein Browser unterstützt das Audio-Element nicht.
@@ -601,7 +686,7 @@
             
             // Show the task countdown with a brief highlight
             taskCountdownEl.style.display = 'block';
-            taskCountdownEl.style.backgroundColor = '#3CB371'; // Green highlight
+            taskCountdownEl.style.backgroundColor = '#4CAF50'; // Green highlight
             setTimeout(() => {
                 taskCountdownEl.style.backgroundColor = ''; // Reset color
             }, 1500);
@@ -634,7 +719,7 @@
                 nextActivity.endTime = endTime;
                 
                 // Highlight the transition to a new task
-                taskCountdownEl.style.backgroundColor = '#3CB371'; // Green to indicate new task
+                taskCountdownEl.style.backgroundColor = '#4CAF50'; // Green to indicate new task
                 setTimeout(() => {
                     taskCountdownEl.style.backgroundColor = ''; // Reset after 2 seconds
                 }, 2000);
@@ -710,7 +795,7 @@
             
             // Change color when less than 1 minute remains
             if (remainingMs < 60000) {
-                taskCountdownEl.style.backgroundColor = '#FF4136'; // Bright red for urgency
+                taskCountdownEl.style.backgroundColor = '#FF6969'; // Bright red for urgency
             } else {
                 taskCountdownEl.style.backgroundColor = '';
             }
@@ -1001,433 +1086,4 @@
             if (availableTime < 0) availableTime = 0;
             
             // Planned time (sum of non-completed activities durations)
-            const plannedTime = state.activities
-                .filter(a => !a.completed)
-                .reduce((total, activity) => total + parseInt(activity.duration), 0);
-            
-            // Buffer time
-            const bufferTime = Math.max(0, availableTime - plannedTime);
-            
-            // Update display
-            availableTimeEl.textContent = formatTimeValue(availableTime);
-            plannedTimeEl.textContent = formatTimeValue(plannedTime);
-            bufferTimeEl.textContent = formatTimeValue(bufferTime);
-            
-            // Update buffer time color
-            if (bufferTime < 10) {
-                bufferTimeEl.classList.add('danger');
-                bufferTimeEl.classList.remove('warning');
-            } else if (bufferTime < 30) {
-                bufferTimeEl.classList.add('warning');
-                bufferTimeEl.classList.remove('danger');
-            } else {
-                bufferTimeEl.classList.remove('warning');
-                bufferTimeEl.classList.remove('danger');
-            }
-            
-            // Update countdown
-            if (availableTime <= 0) {
-                countdownEl.textContent = 'Zeit zum Ausgehen!';
-                countdownEl.style.backgroundColor = '#CD5C5C';
-            } else {
-                countdownEl.textContent = `Du musst in ${formatTimeSpan(availableTime)} rausgehen`;
-                countdownEl.style.backgroundColor = '';
-            }
-        }
-        
-        // Settings functions
-        function saveSettings() {
-            state.departureTime = departureTimeEl.value;
-            state.alarm.enabled = alarmToggleEl.checked;
-            state.alarm.time = parseInt(alarmTimeEl.value);
-            
-            saveState();
-            
-            // Update UI
-            updateTimeSummary();
-            
-            // Schedule alarm with new settings
-            if (alarmTimeout) {
-                clearTimeout(alarmTimeout);
-                alarmTimeout = null;
-            }
-            
-            if (state.alarm.enabled) {
-                scheduleAlarm();
-            }
-            
-            // Show confirmation
-            const saveBtn = document.getElementById('save-departure');
-            const originalText = saveBtn.textContent;
-            saveBtn.textContent = 'Gespeichert!';
-            saveBtn.disabled = true;
-            
-            setTimeout(() => {
-                saveBtn.textContent = originalText;
-                saveBtn.disabled = false;
-            }, 1500);
-        }
-        
-        // Alarm functions
-        function playAlarm() {
-            console.log("Attempting to play alarm sound");
-            
-            // Try using the Web Audio API as a more reliable sound method
-            try {
-                // Create audio context
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                const audioContext = new AudioContext();
-                
-                // Create oscillator for alarm sound
-                const oscillator1 = audioContext.createOscillator();
-                const oscillator2 = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator1.connect(gainNode);
-                oscillator2.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator1.type = 'sine';
-                oscillator1.frequency.value = 800;
-                oscillator2.type = 'sine';
-                oscillator2.frequency.value = 600;
-                
-                gainNode.gain.value = 0.2;
-                
-                oscillator1.start();
-                oscillator2.start();
-                
-                // Beep pattern
-                setTimeout(() => {
-                    gainNode.gain.value = 0;
-                    setTimeout(() => {
-                        gainNode.gain.value = 0.2;
-                        setTimeout(() => {
-                            gainNode.gain.value = 0;
-                            setTimeout(() => {
-                                gainNode.gain.value = 0.2;
-                                setTimeout(() => {
-                                    oscillator1.stop();
-                                    oscillator2.stop();
-                                    audioContext.close();
-                                }, 1000);
-                            }, 200);
-                        }, 1000);
-                    }, 200);
-                }, 1000);
-            } catch (e) {
-                console.error("Web Audio API error:", e);
-            }
-            
-            // Also try the audio element as a fallback
-            if (alarmSoundEl) {
-                alarmSoundEl.currentTime = 0;
-                
-                // Try to vibrate the device if possible (for mobile)
-                if ('vibrate' in navigator) {
-                    navigator.vibrate([500, 200, 500]);
-                }
-                
-                const playPromise = alarmSoundEl.play();
-                
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.error("Audio playback error:", error);
-                        // If audio fails, use alert as last resort
-                        alert(`ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
-                    });
-                }
-            } else {
-                console.error("Audio element not found");
-                alert(`ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
-            }
-        }
-        
-        // Schedule alarm
-        function scheduleAlarm() {
-            console.log("Scheduling alarm");
-            
-            if (!state.alarm.enabled) {
-                console.log("Alarm disabled, not scheduling");
-                return;
-            }
-            
-            const now = new Date();
-            const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            const departureMinutes = timeStringToMinutes(state.departureTime);
-            
-            // Calculate time until alarm should trigger (departure time - alarm minutes)
-            const alarmMinutes = departureMinutes - state.alarm.time;
-            let timeUntilAlarm = alarmMinutes - currentMinutes;
-            
-            // If alarm time is in the past, don't schedule
-            if (timeUntilAlarm <= 0) {
-                console.log("Alarm time in past, not scheduling");
-                return;
-            }
-            
-            console.log(`Alarm scheduled for ${timeUntilAlarm} minutes from now`);
-            
-            // Clear any existing alarm
-            if (alarmTimeout) {
-                clearTimeout(alarmTimeout);
-            }
-            
-            // Schedule alarm
-            alarmTimeout = setTimeout(() => {
-                console.log("Alarm triggered!");
-                playAlarm();
-                showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`, 10000);
-            }, timeUntilAlarm * 60 * 1000);
-        }
-        
-        function showNotification(message, duration = 5000) {
-            notificationEl.textContent = message;
-            notificationEl.classList.add('show');
-            
-            // Clear any existing timeout
-            if (notificationTimeout) {
-                clearTimeout(notificationTimeout);
-            }
-            
-            // Hide notification after specified duration (default 5 seconds)
-            notificationTimeout = setTimeout(() => {
-                notificationEl.classList.remove('show');
-            }, duration);
-        }
-        
-        // Utility functions
-        function timeStringToMinutes(timeString) {
-            const [hours, minutes] = timeString.split(':').map(Number);
-            return hours * 60 + minutes;
-        }
-        
-        function formatTimeValue(minutes) {
-            if (minutes < 60) {
-                return `${minutes} Min`;
-            } else {
-                const hours = Math.floor(minutes / 60);
-                const mins = minutes % 60;
-                return `${hours}:${mins.toString().padStart(2, '0')} Std`;
-            }
-        }
-        
-        function formatTimeSpan(minutes) {
-            if (minutes < 60) {
-                return `${minutes} Minuten`;
-            } else {
-                const hours = Math.floor(minutes / 60);
-                const mins = minutes % 60;
-                
-                let result = `${hours} Stunde${hours !== 1 ? 'n' : ''}`;
-                if (mins > 0) {
-                    result += ` ${mins} Minute${mins !== 1 ? 'n' : ''}`;
-                }
-                
-                return result;
-            }
-        }
-        
-        // Storage functions
-        function saveState() {
-            try {
-                localStorage.setItem('adhsJetztPlaner', JSON.stringify(state));
-            } catch (e) {
-                console.log('localStorage not available:', e);
-            }
-        }
-        
-        function loadState() {
-            try {
-                const savedState = localStorage.getItem('adhsJetztPlaner');
-                if (savedState) {
-                    // Parse saved state
-                    const parsedState = JSON.parse(savedState);
-                    
-                    // Make sure activities is an array
-                    if (!Array.isArray(parsedState.activities)) {
-                        parsedState.activities = [];
-                    }
-                    
-                    // Convert date strings back to Date objects
-                    parsedState.activities.forEach(activity => {
-                        if (activity.endTime) {
-                            activity.endTime = new Date(activity.endTime);
-                        }
-                    });
-                    
-                    // Use the parsed state
-                    state = parsedState;
-                    
-                    // Handle older versions of state
-                    if (state.currentTaskIndex === undefined) {
-                        state.currentTaskIndex = -1;
-                    }
-                    
-                    // Validate current task index
-                    if (state.currentTaskIndex >= state.activities.length) {
-                        state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
-                    }
-                }
-            } catch (e) {
-                console.log('Error loading from localStorage:', e);
-                // If there's an error, reset to defaults
-                state = {
-                    activities: [],
-                    departureTime: '14:30',
-                    alarm: {
-                        enabled: true,
-                        time: 15
-                    },
-                    currentTaskIndex: -1
-                };
-            }
-        }
-        
-        // Initialize app
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                // Load saved state
-                loadState();
-                
-                // Initialize UI
-                departureTimeEl.value = state.departureTime;
-                alarmToggleEl.checked = state.alarm.enabled;
-                alarmTimeEl.value = state.alarm.time;
-                
-                // Show/hide alarm options based on toggle state
-                if (state.alarm.enabled) {
-                    alarmOptionsEl.classList.add('visible');
-                } else {
-                    alarmOptionsEl.classList.remove('visible');
-                }
-                
-                // Find current task index if not set
-                if (state.currentTaskIndex === -1) {
-                    state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
-                }
-                
-                // Render activities
-                renderActivities();
-                
-                // Set up update intervals
-                updateTimeDisplay();
-                updateTimeSummary();
-                setInterval(updateTimeDisplay, 10000); // Update time every 10 seconds
-                setInterval(updateTimeSummary, 30000); // Update summary every 30 seconds
-                
-                // Set up alarm if enabled
-                scheduleAlarm();
-                
-                // Event listeners
-                document.getElementById('show-add-form').addEventListener('click', function() {
-                    addFormEl.style.display = 'block';
-                    activityNameEl.focus();
-                });
-                
-                document.getElementById('cancel-add').addEventListener('click', function() {
-                    addFormEl.style.display = 'none';
-                    activityNameEl.value = '';
-                });
-                
-                document.getElementById('add-activity-btn').addEventListener('click', addActivity);
-                document.getElementById('delete-all-btn').addEventListener('click', deleteAllActivities);
-                document.getElementById('save-departure').addEventListener('click', saveSettings);
-                
-                alarmToggleEl.addEventListener('change', function() {
-                    state.alarm.enabled = this.checked;
-                    
-                    if (this.checked) {
-                        alarmOptionsEl.classList.add('visible');
-                    } else {
-                        alarmOptionsEl.classList.remove('visible');
-                    }
-                    
-                    // Clear any existing alarms
-                    if (alarmTimeout) {
-                        clearTimeout(alarmTimeout);
-                        alarmTimeout = null;
-                    }
-                    
-                    // Schedule new alarm if enabled
-                    if (state.alarm.enabled) {
-                        scheduleAlarm();
-                    }
-                    
-                    saveState();
-                });
-                
-                alarmTimeEl.addEventListener('change', function() {
-                    state.alarm.time = parseInt(this.value);
-                    
-                    // Clear any existing alarms
-                    if (alarmTimeout) {
-                        clearTimeout(alarmTimeout);
-                        alarmTimeout = null;
-                    }
-                    
-                    // Schedule new alarm if enabled
-                    if (state.alarm.enabled) {
-                        scheduleAlarm();
-                    }
-                    
-                    saveState();
-                });
-                
-                document.getElementById('test-alarm').addEventListener('click', function() {
-                    playAlarm();
-                    showNotification('Alarm Test!', 3000);
-                });
-                
-                // Add activity on Enter key in fields
-                activityNameEl.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        addActivity();
-                    }
-                });
-                
-                activityDurationEl.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        addActivity();
-                    }
-                });
-                
-                // Listen for visibility change to handle when app comes back into focus
-                document.addEventListener('visibilitychange', function() {
-                    if (!document.hidden) {
-                        // App is visible again, update everything
-                        updateTimeDisplay();
-                        updateTimeSummary();
-                        
-                        // Check if we need to restart task countdown
-                        if (!taskCountdownInterval && state.activities.some(a => !a.completed)) {
-                            startTaskCountdown();
-                        }
-                    }
-                });
-                
-                // Special handling for mobile devices
-                if ('ontouchstart' in window) {
-                    // Make buttons larger for touch
-                    document.querySelectorAll('.activity-btn').forEach(btn => {
-                        btn.style.minWidth = '36px';
-                        btn.style.minHeight = '36px';
-                    });
-                    
-                    // Enable vibration for notifications if available
-                    try {
-                        if ('vibrate' in navigator) {
-                            navigator.vibrate(1); // Test vibration permission
-                        }
-                    } catch (e) {
-                        console.log('Vibration not available');
-                    }
-                }
-            } catch (e) {
-                console.error("Error initializing app:", e);
-                alert("Es gab ein Problem beim Starten der App. Bitte laden Sie die Seite neu.");
-            }
-        });
-    </script>
-</body>
-</html>
+            const plannedTime =
