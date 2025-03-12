@@ -4,24 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADHS Jetzt-Planer</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary: #5D9C59;
-            --primary-dark: #4a7d48;
-            --primary-light: #a5d6a7;
-            --primary-bg: #f0f7ef;
-            --text: #2C3333;
-            --text-light: #4E6E5D;
-            --warning: #FFC436;
-            --danger: #FF6969;
-            --success: #4CAF50;
-            --gray-light: #F5F5F5;
-            --gray: #E0E0E0;
-            --white: #FFFFFF;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --primary: #3B8C6E;
+            --primary-dark: #2A6450;
+            --primary-light: #9FDBC1;
+            --primary-pale: #EAF5F0;
+            --background: #F9FAFB;
+            --surface: #FFFFFF;
+            --text: #333333;
+            --text-secondary: #6B7280;
+            --alert: #EF4444;
+            --warning: #F59E0B;
+            --success: #10B981;
+            --border-radius: 12px;
+            --shadow: 0 2px 10px rgba(0,0,0,0.05);
+            --transition: all 0.3s ease;
         }
         
         * {
@@ -31,87 +30,123 @@
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--gray-light);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--background);
             color: var(--text);
-            line-height: 1.6;
-            -webkit-tap-highlight-color: transparent;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             padding: 0;
             margin: 0;
         }
         
         .app-container {
-            max-width: 600px;
+            max-width: 100%;
             margin: 0 auto;
-            padding: 16px;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         
-        /* Header Styles */
+        /* Header */
         .app-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            background-color: var(--white);
-            border-radius: 16px;
-            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
             box-shadow: var(--shadow);
         }
         
         .app-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-dark);
+            font-size: 1.2rem;
+            font-weight: 600;
             margin: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .app-title i {
+            margin-right: 8px;
         }
         
         .current-time {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-dark);
-            background-color: var(--primary-bg);
-            padding: 8px 12px;
-            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background-color: rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
         }
         
-        /* Countdown Styles */
+        /* Main content */
+        .main-content {
+            flex: 1;
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        /* Countdown */
+        .countdown-container {
+            margin-bottom: 16px;
+        }
+        
         .countdown {
-            background-color: var(--primary);
+            background-color: var(--primary-dark);
             color: white;
             padding: 16px;
-            border-radius: 16px;
+            border-radius: var(--border-radius);
             text-align: center;
-            font-weight: 600;
             font-size: 1.1rem;
-            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             box-shadow: var(--shadow);
+        }
+        
+        .countdown i {
+            margin-right: 10px;
+            font-size: 1.3rem;
         }
         
         .task-countdown {
-            background-color: var(--danger);
+            background-color: var(--alert);
             color: white;
-            padding: 16px;
-            border-radius: 16px;
+            margin-top: 10px;
+            padding: 14px;
+            border-radius: var(--border-radius);
             text-align: center;
             font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
             display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
         }
         
-        /* Time Summary Styles */
+        .task-countdown i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        
+        /* Time summary */
         .time-summary {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
+            gap: 10px;
+            margin-bottom: 20px;
         }
         
         .time-box {
-            background-color: var(--white);
-            border-radius: 16px;
-            padding: 16px;
+            background-color: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 14px 10px;
             text-align: center;
             box-shadow: var(--shadow);
             display: flex;
@@ -120,9 +155,9 @@
         }
         
         .time-box-label {
-            font-size: 0.9rem;
-            color: var(--text-light);
-            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
         }
         
         .time-box-value {
@@ -136,15 +171,15 @@
         }
         
         .buffer-time.danger {
-            color: var(--danger);
+            color: var(--alert);
         }
         
-        /* Activities Header Styles */
+        /* Activities */
         .activities-section {
-            background-color: var(--white);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 24px;
+            background-color: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            margin-bottom: 16px;
             box-shadow: var(--shadow);
         }
         
@@ -155,33 +190,39 @@
             margin-bottom: 16px;
         }
         
-        .activities-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--primary-dark);
+        .activities-header h2 {
+            font-size: 1.1rem;
             margin: 0;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+        }
+        
+        .activities-header h2 i {
+            margin-right: 8px;
+            color: var(--primary);
         }
         
         .action-buttons {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
         
         .btn {
-            border: none;
-            border-radius: 12px;
-            padding: 10px 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s, transform 0.1s;
-            font-size: 0.95rem;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
         }
         
-        .btn:active {
-            transform: scale(0.97);
+        .btn i {
+            margin-right: 6px;
         }
         
         .btn-primary {
@@ -194,167 +235,204 @@
         }
         
         .btn-danger {
-            background-color: var(--danger);
-            color: white;
+            background-color: #FEE2E2;
+            color: var(--alert);
         }
         
         .btn-danger:hover {
-            background-color: #e05d5d;
+            background-color: #FECACA;
         }
         
-        /* Add Form Styles */
+        /* Activity Form */
         .add-form {
-            background-color: var(--primary-bg);
-            border-radius: 12px;
+            background-color: var(--primary-pale);
+            border-radius: 10px;
             padding: 16px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             display: none;
+        }
+        
+        .form-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary-dark);
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: white;
+            transition: var(--transition);
+        }
+        
+        .form-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 140, 110, 0.2);
         }
         
         .form-row {
             display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 10px;
         }
         
-        .form-input {
-            padding: 12px;
-            border: 1px solid var(--gray);
-            border-radius: 12px;
-            font-size: 1rem;
-            width: 100%;
-            background-color: var(--white);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(93, 156, 89, 0.2);
-        }
-        
-        .form-input-name {
+        .form-row .form-group {
             flex: 1;
         }
         
-        .form-input-duration {
-            width: 80px;
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
         }
         
-        /* Activity List Styles */
+        /* Activity list */
+        .no-activities {
+            text-align: center;
+            padding: 24px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
         .activity {
             display: flex;
             align-items: center;
-            background-color: var(--white);
-            border-radius: 12px;
+            background-color: var(--surface);
+            border-radius: 10px;
             padding: 14px;
             margin-bottom: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            border-left: 4px solid transparent;
-            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: var(--transition);
         }
         
         .activity.current {
-            border-left: 4px solid var(--danger);
-            background-color: #FFF7F5;
+            border-left: 3px solid var(--alert);
+            background-color: #FFF5F5;
         }
         
         .activity.completed {
-            opacity: 0.75;
-            text-decoration: line-through;
-            background-color: #F8FBF8;
-            border-left: 4px solid var(--success);
+            opacity: 0.8;
+            border-left: 3px solid var(--success);
+            background-color: #F0FDF4;
         }
         
         .activity-time {
             font-weight: 700;
-            width: 52px;
+            width: 55px;
             font-size: 0.9rem;
-            color: var(--text-light);
+            color: var(--primary-dark);
+        }
+        
+        .activity.completed .activity-time {
+            color: var(--success);
         }
         
         .activity-name {
             flex: 1;
-            padding: 0 12px;
-            word-break: break-word;
+            padding: 0 10px;
+            font-weight: 500;
+        }
+        
+        .activity.completed .activity-name {
+            text-decoration: line-through;
+            color: var(--text-secondary);
         }
         
         .activity-duration {
-            background-color: var(--primary-bg);
-            color: var(--primary-dark);
+            color: var(--text-secondary);
             font-size: 0.85rem;
-            font-weight: 600;
+            font-weight: 500;
+            background-color: #F3F4F6;
             padding: 4px 8px;
-            border-radius: 8px;
-            margin-right: 12px;
-            white-space: nowrap;
+            border-radius: 12px;
+            margin-right: 10px;
         }
         
         .activity-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
         
         .activity-btn {
             border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 1.1rem;
-            transition: background-color 0.2s;
+            transition: var(--transition);
+            font-size: 1rem;
         }
         
         .complete-btn {
-            background-color: #E8F5E9;
+            background-color: #DCFCE7;
             color: var(--success);
         }
         
         .complete-btn:hover {
-            background-color: #C8E6C9;
+            background-color: #BBF7D0;
         }
         
         .revert-btn {
-            background-color: #FFF8E1;
+            background-color: #FEF3C7;
             color: var(--warning);
         }
         
         .revert-btn:hover {
-            background-color: #FFECB3;
+            background-color: #FDE68A;
         }
         
         .delete-btn {
-            background-color: #FFEBEE;
-            color: var(--danger);
+            background-color: #FEE2E2;
+            color: var(--alert);
         }
         
         .delete-btn:hover {
-            background-color: #FFCDD2;
+            background-color: #FECACA;
         }
         
-        .no-activities {
-            text-align: center;
-            color: var(--text-light);
-            padding: 30px 0;
-            font-size: 1rem;
-        }
-        
-        /* Settings Styles */
+        /* Settings */
         .settings-section {
-            background-color: var(--white);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 24px;
+            background-color: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            margin-bottom: 16px;
             box-shadow: var(--shadow);
         }
         
-        .settings-title {
-            font-size: 1.2rem;
+        .settings-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 1.1rem;
             font-weight: 600;
-            color: var(--primary-dark);
+        }
+        
+        .settings-header i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+        
+        .setting-group {
             margin-bottom: 16px;
         }
         
@@ -362,27 +440,36 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 16px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--gray);
+            margin-bottom: 12px;
         }
         
-        .setting-row:last-of-type {
-            border-bottom: none;
-            padding-bottom: 0;
+        .setting-row:last-child {
             margin-bottom: 0;
         }
         
         .setting-label {
-            font-weight: 500;
+            font-size: 0.95rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
         }
         
-        /* Alarm Toggle Switch */
+        .setting-label i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+        
+        .alarm-icon {
+            margin-left: 6px;
+            color: var(--alert);
+        }
+        
+        /* Switch */
         .switch {
             position: relative;
             display: inline-block;
-            width: 52px;
-            height: 28px;
+            width: 46px;
+            height: 24px;
         }
         
         .switch input {
@@ -398,21 +485,22 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: var(--gray);
+            background-color: #E5E7EB;
             transition: .4s;
-            border-radius: 28px;
+            border-radius: 24px;
         }
         
         .slider:before {
             position: absolute;
             content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            bottom: 4px;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
             background-color: white;
             transition: .4s;
             border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
         input:checked + .slider {
@@ -420,17 +508,14 @@
         }
         
         input:checked + .slider:before {
-            transform: translateX(24px);
-        }
-        
-        .alarm-icon {
-            margin-left: 8px;
-            font-size: 1.1rem;
-            color: var(--warning);
+            transform: translateX(22px);
         }
         
         .alarm-options {
-            margin-top: 16px;
+            background-color: var(--primary-pale);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
             display: none;
         }
         
@@ -438,19 +523,42 @@
             display: block;
         }
         
-        .test-alarm-btn {
-            background-color: var(--warning);
-            color: white;
-            border: none;
+        /* Time input */
+        .time-input {
+            background-color: white;
+            border: 1px solid #E5E7EB;
+            padding: 8px 12px;
             border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-left: 10px;
+            font-size: 1rem;
         }
         
-        /* Notification Styles */
+        .time-select {
+            background-color: white;
+            border: 1px solid #E5E7EB;
+            padding: 8px 12px;
+            border-radius: 8px;
+            min-width: 140px;
+            font-size: 0.95rem;
+        }
+        
+        .test-btn {
+            background-color: #FEE2E2;
+            color: var(--alert);
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            margin-left: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .test-btn i {
+            margin-right: 4px;
+        }
+        
+        /* Notification */
         .notification {
             position: fixed;
             bottom: -100px;
@@ -460,134 +568,179 @@
             color: white;
             padding: 16px 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
             z-index: 1000;
             transition: bottom 0.3s ease-in-out;
             text-align: center;
             font-weight: 600;
             max-width: 90%;
-            width: 340px;
+            width: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .notification i {
+            margin-right: 10px;
         }
         
         .notification.show {
             bottom: 20px;
         }
         
-        /* Media queries for larger screens */
-        @media (min-width: 600px) {
-            .app-container {
+        /* Footer */
+        .app-footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            background-color: var(--surface);
+            border-top: 1px solid #F3F4F6;
+        }
+        
+        /* Medium screens */
+        @media (min-width: 640px) {
+            .main-content {
                 padding: 24px;
             }
             
-            .time-summary {
-                gap: 16px;
-            }
-            
-            .app-header, .countdown, .task-countdown, .activities-section, .settings-section {
-                border-radius: 20px;
+            .activities-section,
+            .settings-section {
+                padding: 20px;
             }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <div class="app-header">
-            <h1 class="app-title">ADHS Jetzt-Planer</h1>
+        <header class="app-header">
+            <h1 class="app-title"><i class="fas fa-brain"></i> ADHS Jetzt-Planer</h1>
             <div class="current-time" id="current-time">12:30</div>
-        </div>
+        </header>
         
-        <div class="countdown" id="countdown">
-            Du musst in 2 Stunden rausgehen
-        </div>
-        
-        <div class="task-countdown" id="task-countdown">
-            Aktuelle Aufgabe: noch 5 Minuten
-        </div>
-        
-        <div class="time-summary">
-            <div class="time-box">
-                <div class="time-box-label">Verfügbar</div>
-                <div class="time-box-value" id="available-time">2:00 Std</div>
-            </div>
-            <div class="time-box">
-                <div class="time-box-label">Geplant</div>
-                <div class="time-box-value" id="planned-time">45 Min</div>
-            </div>
-            <div class="time-box">
-                <div class="time-box-label">Puffer</div>
-                <div class="time-box-value buffer-time" id="buffer-time">1:15 Std</div>
-            </div>
-        </div>
-        
-        <div class="activities-section">
-            <div class="activities-header">
-                <h2 class="activities-title">Meine Aktivitäten</h2>
-                <div class="action-buttons">
-                    <button class="btn btn-primary" id="show-add-form">+ Aktivität</button>
-                    <button class="btn btn-danger" id="delete-all-btn">Alle löschen</button>
+        <main class="main-content">
+            <div class="countdown-container">
+                <div class="countdown" id="countdown">
+                    <i class="fas fa-clock"></i>
+                    <span>Du musst in 2 Stunden rausgehen</span>
+                </div>
+                
+                <div class="task-countdown" id="task-countdown">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span>Aktuelle Aufgabe: noch 5 Minuten</span>
                 </div>
             </div>
             
-            <div class="add-form" id="add-form">
-                <div class="form-row">
-                    <input type="text" class="form-input form-input-name" id="activity-name" placeholder="Was willst du tun?">
-                    <input type="number" class="form-input form-input-duration" id="activity-duration" placeholder="Min" value="10" min="1" max="180">
+            <div class="time-summary">
+                <div class="time-box">
+                    <div class="time-box-label">Verfügbar</div>
+                    <div class="time-box-value" id="available-time">2:00 Std</div>
                 </div>
-                <div class="form-row">
-                    <button class="btn btn-primary" id="add-activity-btn">Hinzufügen</button>
-                    <button class="btn" id="cancel-add">Abbrechen</button>
+                <div class="time-box">
+                    <div class="time-box-label">Geplant</div>
+                    <div class="time-box-value" id="planned-time">45 Min</div>
+                </div>
+                <div class="time-box">
+                    <div class="time-box-label">Puffer</div>
+                    <div class="time-box-value buffer-time" id="buffer-time">1:15 Std</div>
                 </div>
             </div>
             
-            <div id="activity-list">
-                <!-- Activities will be dynamically added here -->
-            </div>
-        </div>
-        
-        <div class="settings-section">
-            <h2 class="settings-title">Einstellungen</h2>
-            
-            <div class="setting-row">
-                <div class="setting-label">Wann musst du rausgehen?</div>
-                <input type="time" class="form-input" id="departure-time" value="14:30">
-            </div>
-            
-            <div class="setting-row">
-                <div class="setting-label">
-                    Alarm aktivieren 
-                    <span class="alarm-icon">🔔</span>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="alarm-toggle" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="alarm-options visible" id="alarm-options">
-                <div class="setting-row">
-                    <div class="setting-label">Alarm-Zeit vor Ausgehen:</div>
-                    <div>
-                        <select class="form-input" id="alarm-time">
-                            <option value="5">5 Minuten</option>
-                            <option value="10">10 Minuten</option>
-                            <option value="15" selected>15 Minuten</option>
-                            <option value="30">30 Minuten</option>
-                            <option value="60">1 Stunde</option>
-                        </select>
-                        <button class="test-alarm-btn" id="test-alarm">Test</button>
+            <section class="activities-section">
+                <div class="activities-header">
+                    <h2><i class="fas fa-tasks"></i> Meine Aktivitäten</h2>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" id="show-add-form">
+                            <i class="fas fa-plus"></i> Neu
+                        </button>
+                        <button class="btn btn-danger" id="delete-all-btn">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
-            </div>
+                
+                <div class="add-form" id="add-form">
+                    <div class="form-title">Neue Aktivität hinzufügen</div>
+                    <div class="form-group">
+                        <label class="form-label" for="activity-name">Aktivität</label>
+                        <input type="text" class="form-input" id="activity-name" placeholder="Was willst du tun?">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="activity-duration">Dauer (Minuten)</label>
+                        <input type="number" class="form-input" id="activity-duration" placeholder="Min" value="10" min="1" max="180">
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn" id="cancel-add">Abbrechen</button>
+                        <button class="btn btn-primary" id="add-activity-btn">Hinzufügen</button>
+                    </div>
+                </div>
+                
+                <div id="activity-list">
+                    <!-- Activities will be dynamically added here -->
+                </div>
+            </section>
             
-            <button class="btn btn-primary" id="save-departure">Einstellungen speichern</button>
-        </div>
+            <section class="settings-section">
+                <div class="settings-header">
+                    <i class="fas fa-cog"></i> Einstellungen
+                </div>
+                
+                <div class="setting-group">
+                    <div class="setting-row">
+                        <div class="setting-label">
+                            <i class="fas fa-walking"></i> Wann musst du rausgehen?
+                        </div>
+                        <input type="time" class="time-input" id="departure-time" value="14:30">
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <div class="setting-row">
+                        <div class="setting-label">
+                            <i class="fas fa-bell"></i> Alarm aktivieren
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="alarm-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="alarm-options visible" id="alarm-options">
+                        <div class="setting-row">
+                            <div class="setting-label">Alarm-Zeit vor Ausgehen:</div>
+                            <div>
+                                <select class="time-select" id="alarm-time">
+                                    <option value="5">5 Minuten</option>
+                                    <option value="10">10 Minuten</option>
+                                    <option value="15" selected>15 Minuten</option>
+                                    <option value="30">30 Minuten</option>
+                                    <option value="60">1 Stunde</option>
+                                </select>
+                                <button class="test-btn" id="test-alarm">
+                                    <i class="fas fa-volume-up"></i> Test
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" id="save-departure">
+                    <i class="fas fa-save"></i> Einstellungen speichern
+                </button>
+            </section>
+        </main>
+        
+        <footer class="app-footer">
+            ADHS Jetzt-Planer &copy; 2025
+        </footer>
     </div>
     
     <div class="notification" id="notification">
-        Zeit zum Ausgehen!
+        <i class="fas fa-exclamation-circle"></i>
+        <span>Zeit zum Ausgehen!</span>
     </div>
     
-    <!-- Audio Element für den Alarm -->
+    <!-- Audio Element for alarm -->
     <audio id="alarm-sound">
         <source src="uplifting-intro-music-for-youtube-and-podcasts-by-joshua-wales-292600.mp3" type="audio/mpeg">
         Dein Browser unterstützt das Audio-Element nicht.
@@ -685,8 +838,8 @@
             updateTaskCountdown();
             
             // Show the task countdown with a brief highlight
-            taskCountdownEl.style.display = 'block';
-            taskCountdownEl.style.backgroundColor = '#4CAF50'; // Green highlight
+            taskCountdownEl.style.display = 'flex';
+            taskCountdownEl.style.backgroundColor = '#10B981'; // Green highlight
             setTimeout(() => {
                 taskCountdownEl.style.backgroundColor = ''; // Reset color
             }, 1500);
@@ -719,7 +872,7 @@
                 nextActivity.endTime = endTime;
                 
                 // Highlight the transition to a new task
-                taskCountdownEl.style.backgroundColor = '#4CAF50'; // Green to indicate new task
+                taskCountdownEl.style.backgroundColor = '#10B981'; // Green to indicate new task
                 setTimeout(() => {
                     taskCountdownEl.style.backgroundColor = ''; // Reset after 2 seconds
                 }, 2000);
@@ -791,11 +944,15 @@
             // Add a "current" or "next" prefix to clearly indicate which task is active
             const taskPrefix = activity.orderIndex === 0 ? '' : 'Aktuelle Aufgabe: ';
             
-            taskCountdownEl.textContent = `${taskPrefix}${activity.name}: noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`;
+            // Update the task countdown text
+            const countdownText = document.querySelector('#task-countdown span');
+            if (countdownText) {
+                countdownText.textContent = `${taskPrefix}${activity.name}: noch ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} Min (bis ${finishTimeStr})`;
+            }
             
             // Change color when less than 1 minute remains
             if (remainingMs < 60000) {
-                taskCountdownEl.style.backgroundColor = '#FF6969'; // Bright red for urgency
+                taskCountdownEl.style.backgroundColor = '#EF4444'; // Bright red for urgency
             } else {
                 taskCountdownEl.style.backgroundColor = '';
             }
@@ -900,9 +1057,9 @@
                 <div class="activity-duration">${activity.duration} min</div>
                 <div class="activity-actions">
                     ${activity.completed 
-                        ? '<button class="activity-btn revert-btn">↺</button>'
-                        : '<button class="activity-btn complete-btn">✓</button>'}
-                    <button class="activity-btn delete-btn">×</button>
+                        ? '<button class="activity-btn revert-btn"><i class="fas fa-undo"></i></button>'
+                        : '<button class="activity-btn complete-btn"><i class="fas fa-check"></i></button>'}
+                    <button class="activity-btn delete-btn"><i class="fas fa-times"></i></button>
                 </div>
             `;
             
@@ -1011,6 +1168,9 @@
                 
                 // Render activities
                 renderActivities();
+                
+                // Show confirmation
+                showNotification('Aktivität hinzugefügt', 2000);
             }
         }
         
@@ -1044,12 +1204,18 @@
                 renderActivities();
                 updateTimeSummary();
                 saveState();
+                
+                // Show notification
+                showNotification(`Aktivität wiederhergestellt: ${state.activities[activityIndex].name}`, 3000);
             }
         }
         
         function deleteActivity(id) {
             const activityIndex = state.activities.findIndex(a => a.id === id);
             if (activityIndex !== -1) {
+                // Get the activity name for notification
+                const activityName = state.activities[activityIndex].name;
+                
                 // Remove the activity
                 state.activities.splice(activityIndex, 1);
                 
@@ -1065,6 +1231,9 @@
                 renderActivities();
                 updateTimeSummary();
                 saveState();
+                
+                // Show notification
+                showNotification(`Aktivität gelöscht: ${activityName}`, 3000);
             }
         }
         
@@ -1086,4 +1255,428 @@
             if (availableTime < 0) availableTime = 0;
             
             // Planned time (sum of non-completed activities durations)
-            const plannedTime =
+            const plannedTime = state.activities
+                .filter(a => !a.completed)
+                .reduce((total, activity) => total + parseInt(activity.duration), 0);
+            
+            // Buffer time
+            const bufferTime = Math.max(0, availableTime - plannedTime);
+            
+            // Update display
+            availableTimeEl.textContent = formatTimeValue(availableTime);
+            plannedTimeEl.textContent = formatTimeValue(plannedTime);
+            bufferTimeEl.textContent = formatTimeValue(bufferTime);
+            
+            // Update buffer time color
+            if (bufferTime < 10) {
+                bufferTimeEl.classList.add('danger');
+                bufferTimeEl.classList.remove('warning');
+            } else if (bufferTime < 30) {
+                bufferTimeEl.classList.add('warning');
+                bufferTimeEl.classList.remove('danger');
+            } else {
+                bufferTimeEl.classList.remove('warning');
+                bufferTimeEl.classList.remove('danger');
+            }
+            
+            // Update countdown text
+            const countdownSpan = document.querySelector('#countdown span');
+            if (countdownSpan) {
+                if (availableTime <= 0) {
+                    countdownSpan.textContent = 'Zeit zum Ausgehen!';
+                    countdownEl.style.backgroundColor = '#EF4444';
+                } else {
+                    countdownSpan.textContent = `Du musst in ${formatTimeSpan(availableTime)} rausgehen`;
+                    countdownEl.style.backgroundColor = '';
+                }
+            }
+        }
+        
+        // Settings functions
+        function saveSettings() {
+            state.departureTime = departureTimeEl.value;
+            state.alarm.enabled = alarmToggleEl.checked;
+            state.alarm.time = parseInt(alarmTimeEl.value);
+            
+            saveState();
+            
+            // Update UI
+            updateTimeSummary();
+            
+            // Schedule alarm with new settings
+            if (alarmTimeout) {
+                clearTimeout(alarmTimeout);
+                alarmTimeout = null;
+            }
+            
+            if (state.alarm.enabled) {
+                scheduleAlarm();
+            }
+            
+            // Show confirmation
+            showNotification('Einstellungen gespeichert', 2000);
+        }
+        
+        // Alarm functions
+        function playAlarm() {
+            console.log("Attempting to play alarm sound");
+            
+            // Try using the Web Audio API as a more reliable sound method
+            try {
+                // Create audio context
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const audioContext = new AudioContext();
+                
+                // Create oscillator for alarm sound
+                const oscillator1 = audioContext.createOscillator();
+                const oscillator2 = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator1.connect(gainNode);
+                oscillator2.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator1.type = 'sine';
+                oscillator1.frequency.value = 800;
+                oscillator2.type = 'sine';
+                oscillator2.frequency.value = 600;
+                
+                gainNode.gain.value = 0.2;
+                
+                oscillator1.start();
+                oscillator2.start();
+                
+                // Beep pattern
+                setTimeout(() => {
+                    gainNode.gain.value = 0;
+                    setTimeout(() => {
+                        gainNode.gain.value = 0.2;
+                        setTimeout(() => {
+                            gainNode.gain.value = 0;
+                            setTimeout(() => {
+                                gainNode.gain.value = 0.2;
+                                setTimeout(() => {
+                                    oscillator1.stop();
+                                    oscillator2.stop();
+                                    audioContext.close();
+                                }, 1000);
+                            }, 200);
+                        }, 1000);
+                    }, 200);
+                }, 1000);
+            } catch (e) {
+                console.error("Web Audio API error:", e);
+            }
+            
+            // Also try the audio element as a fallback
+            if (alarmSoundEl) {
+                alarmSoundEl.currentTime = 0;
+                
+                // Try to vibrate the device if possible (for mobile)
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([500, 200, 500]);
+                }
+                
+                const playPromise = alarmSoundEl.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.error("Audio playback error:", error);
+                        // If audio fails, use alert as last resort
+                        alert(`ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
+                    });
+                }
+            } else {
+                console.error("Audio element not found");
+                alert(`ALARM: In ${state.alarm.time} Minuten musst du rausgehen!`);
+            }
+        }
+        
+        // Schedule alarm
+        function scheduleAlarm() {
+            console.log("Scheduling alarm");
+            
+            if (!state.alarm.enabled) {
+                console.log("Alarm disabled, not scheduling");
+                return;
+            }
+            
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const departureMinutes = timeStringToMinutes(state.departureTime);
+            
+            // Calculate time until alarm should trigger (departure time - alarm minutes)
+            const alarmMinutes = departureMinutes - state.alarm.time;
+            let timeUntilAlarm = alarmMinutes - currentMinutes;
+            
+            // If alarm time is in the past, don't schedule
+            if (timeUntilAlarm <= 0) {
+                console.log("Alarm time in past, not scheduling");
+                return;
+            }
+            
+            console.log(`Alarm scheduled for ${timeUntilAlarm} minutes from now`);
+            
+            // Clear any existing alarm
+            if (alarmTimeout) {
+                clearTimeout(alarmTimeout);
+            }
+            
+            // Schedule alarm
+            alarmTimeout = setTimeout(() => {
+                console.log("Alarm triggered!");
+                playAlarm();
+                showNotification(`In ${state.alarm.time} Minuten musst du rausgehen!`, 10000);
+            }, timeUntilAlarm * 60 * 1000);
+        }
+        
+        function showNotification(message, duration = 5000) {
+            // Update notification text
+            const notificationText = document.querySelector('#notification span');
+            if (notificationText) {
+                notificationText.textContent = message;
+            }
+            
+            // Show notification
+            notificationEl.classList.add('show');
+            
+            // Clear any existing timeout
+            if (notificationTimeout) {
+                clearTimeout(notificationTimeout);
+            }
+            
+            // Hide notification after specified duration
+            notificationTimeout = setTimeout(() => {
+                notificationEl.classList.remove('show');
+            }, duration);
+        }
+        
+        // Utility functions
+        function timeStringToMinutes(timeString) {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        function formatTimeValue(minutes) {
+            if (minutes < 60) {
+                return `${minutes} Min`;
+            } else {
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                return `${hours}:${mins.toString().padStart(2, '0')} Std`;
+            }
+        }
+        
+        function formatTimeSpan(minutes) {
+            if (minutes < 60) {
+                return `${minutes} Minuten`;
+            } else {
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                
+                let result = `${hours} Stunde${hours !== 1 ? 'n' : ''}`;
+                if (mins > 0) {
+                    result += ` ${mins} Minute${mins !== 1 ? 'n' : ''}`;
+                }
+                
+                return result;
+            }
+        }
+        
+        // Storage functions
+        function saveState() {
+            try {
+                localStorage.setItem('adhsJetztPlaner', JSON.stringify(state));
+            } catch (e) {
+                console.log('localStorage not available:', e);
+            }
+        }
+        
+        function loadState() {
+            try {
+                const savedState = localStorage.getItem('adhsJetztPlaner');
+                if (savedState) {
+                    // Parse saved state
+                    const parsedState = JSON.parse(savedState);
+                    
+                    // Make sure activities is an array
+                    if (!Array.isArray(parsedState.activities)) {
+                        parsedState.activities = [];
+                    }
+                    
+                    // Convert date strings back to Date objects
+                    parsedState.activities.forEach(activity => {
+                        if (activity.endTime) {
+                            activity.endTime = new Date(activity.endTime);
+                        }
+                    });
+                    
+                    // Use the parsed state
+                    state = parsedState;
+                    
+                    // Handle older versions of state
+                    if (state.currentTaskIndex === undefined) {
+                        state.currentTaskIndex = -1;
+                    }
+                    
+                    // Validate current task index
+                    if (state.currentTaskIndex >= state.activities.length) {
+                        state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
+                    }
+                }
+            } catch (e) {
+                console.log('Error loading from localStorage:', e);
+                // If there's an error, reset to defaults
+                state = {
+                    activities: [],
+                    departureTime: '14:30',
+                    alarm: {
+                        enabled: true,
+                        time: 15
+                    },
+                    currentTaskIndex: -1
+                };
+            }
+        }
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Load saved state
+                loadState();
+                
+                // Initialize UI
+                departureTimeEl.value = state.departureTime;
+                alarmToggleEl.checked = state.alarm.enabled;
+                alarmTimeEl.value = state.alarm.time;
+                
+                // Show/hide alarm options based on toggle state
+                if (state.alarm.enabled) {
+                    alarmOptionsEl.classList.add('visible');
+                } else {
+                    alarmOptionsEl.classList.remove('visible');
+                }
+                
+                // Find current task index if not set
+                if (state.currentTaskIndex === -1) {
+                    state.currentTaskIndex = state.activities.findIndex(a => !a.completed);
+                }
+                
+                // Render activities
+                renderActivities();
+                
+                // Set up update intervals
+                updateTimeDisplay();
+                updateTimeSummary();
+                setInterval(updateTimeDisplay, 10000); // Update time every 10 seconds
+                setInterval(updateTimeSummary, 30000); // Update summary every 30 seconds
+                
+                // Set up alarm if enabled
+                scheduleAlarm();
+                
+                // Event listeners
+                document.getElementById('show-add-form').addEventListener('click', function() {
+                    addFormEl.style.display = 'block';
+                    activityNameEl.focus();
+                });
+                
+                document.getElementById('cancel-add').addEventListener('click', function() {
+                    addFormEl.style.display = 'none';
+                    activityNameEl.value = '';
+                });
+                
+                document.getElementById('add-activity-btn').addEventListener('click', addActivity);
+                document.getElementById('delete-all-btn').addEventListener('click', deleteAllActivities);
+                document.getElementById('save-departure').addEventListener('click', saveSettings);
+                
+                alarmToggleEl.addEventListener('change', function() {
+                    state.alarm.enabled = this.checked;
+                    
+                    if (this.checked) {
+                        alarmOptionsEl.classList.add('visible');
+                    } else {
+                        alarmOptionsEl.classList.remove('visible');
+                    }
+                    
+                    // Clear any existing alarms
+                    if (alarmTimeout) {
+                        clearTimeout(alarmTimeout);
+                        alarmTimeout = null;
+                    }
+                    
+                    // Schedule new alarm if enabled
+                    if (state.alarm.enabled) {
+                        scheduleAlarm();
+                    }
+                    
+                    saveState();
+                });
+                
+                alarmTimeEl.addEventListener('change', function() {
+                    state.alarm.time = parseInt(this.value);
+                    
+                    // Clear any existing alarms
+                    if (alarmTimeout) {
+                        clearTimeout(alarmTimeout);
+                        alarmTimeout = null;
+                    }
+                    
+                    // Schedule new alarm if enabled
+                    if (state.alarm.enabled) {
+                        scheduleAlarm();
+                    }
+                    
+                    saveState();
+                });
+                
+                document.getElementById('test-alarm').addEventListener('click', function() {
+                    playAlarm();
+                    showNotification('Alarm Test!', 3000);
+                });
+                
+                // Add activity on Enter key in fields
+                activityNameEl.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        addActivity();
+                    }
+                });
+                
+                activityDurationEl.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        addActivity();
+                    }
+                });
+                
+                // Listen for visibility change to handle when app comes back into focus
+                document.addEventListener('visibilitychange', function() {
+                    if (!document.hidden) {
+                        // App is visible again, update everything
+                        updateTimeDisplay();
+                        updateTimeSummary();
+                        
+                        // Check if we need to restart task countdown
+                        if (!taskCountdownInterval && state.activities.some(a => !a.completed)) {
+                            startTaskCountdown();
+                        }
+                    }
+                });
+                
+                // Special handling for mobile devices
+                if ('ontouchstart' in window) {
+                    // Enable vibration for notifications if available
+                    try {
+                        if ('vibrate' in navigator) {
+                            navigator.vibrate(1); // Test vibration permission
+                        }
+                    } catch (e) {
+                        console.log('Vibration not available');
+                    }
+                }
+            } catch (e) {
+                console.error("Error initializing app:", e);
+                alert("Es gab ein Problem beim Starten der App. Bitte laden Sie die Seite neu.");
+            }
+        });
+    </script>
+</body>
+</html>
