@@ -112,6 +112,8 @@
             state.showAddForm = false;
             saveState();
             renderSafe();
+            // Zeiten neu berechnen
+            setTimeout(updateActivityTimes, 100);
         }
 
         function updateActivityName(value) {
@@ -156,6 +158,8 @@
             state.isPaused = false;
             saveState();
             renderSafe();
+            // Sofort Activity-Zeiten aktualisieren
+            setTimeout(updateActivityTimes, 100);
         }
 
         function pauseResumeTask() {
@@ -193,7 +197,53 @@
             }
         }
 
-        // Aktueller Task Timer
+        // Zeit-Berechnungen für Aktivitäten
+        function calculateActivityTimes() {
+            let currentTime = new Date();
+            
+            // Wenn eine Aufgabe läuft, starte von deren ursprünglicher Startzeit
+            if (state.currentTaskIndex !== -1 && state.taskStartTime) {
+                currentTime = new Date(state.taskStartTime);
+            }
+            
+            const times = [];
+            
+            state.activities.forEach((activity, index) => {
+                if (activity.completed) {
+                    times.push({ finishTime: '✓', isCompleted: true });
+                } else if (index === state.currentTaskIndex) {
+                    // Aktuelle Aufgabe - berechne basierend auf verbleibender Zeit
+                    const timeLeft = getCurrentTaskTimeLeft();
+                    if (timeLeft !== null) {
+                        const finishTime = new Date(Date.now() + (timeLeft * 60000));
+                        times.push({ 
+                            finishTime: finishTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+                            isCompleted: false,
+                            isCurrent: true
+                        });
+                    } else {
+                        const finishTime = new Date(currentTime.getTime() + (activity.duration * 60000));
+                        times.push({ 
+                            finishTime: finishTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+                            isCompleted: false,
+                            isCurrent: true
+                        });
+                        currentTime = finishTime;
+                    }
+                } else {
+                    // Zukünftige Aufgaben
+                    const finishTime = new Date(currentTime.getTime() + (activity.duration * 60000));
+                    times.push({ 
+                        finishTime: finishTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+                        isCompleted: false,
+                        isCurrent: false
+                    });
+                    currentTime = finishTime;
+                }
+            });
+            
+            return times;
+        }
         function getCurrentTaskTimeLeft() {
             if (state.currentTaskIndex === -1 || !state.taskStartTime || state.isPaused) return null;
             
@@ -496,7 +546,11 @@
                                 </div>
                             ` : `
                                 <div class="space-y-3">
-                                    ${state.activities.map((activity, index) => `
+                                    ${state.activities.map((activity, index) => {
+                                        const activityTimes = calculateActivityTimes();
+                                        const timeInfo = activityTimes[index] || { finishTime: '--:--', isCompleted: false };
+                                        
+                                        return `
                                         <div class="flex items-center p-4 rounded-2xl transition-all ${
                                             activity.completed
                                                 ? 'bg-emerald-50 border border-emerald-200'
@@ -511,10 +565,25 @@
                                             </button>
                                             
                                             <div class="flex-1">
-                                                <div class="font-medium ${
-                                                    activity.completed ? 'text-emerald-700 line-through' : 'text-slate-800'
-                                                }">
-                                                    ${activity.name}
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <div class="font-medium ${
+                                                        activity.completed ? 'text-emerald-700 line-through' : 'text-slate-800'
+                                                    }">
+                                                        ${activity.name}
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <div class="font-mono font-bold text-lg activity-finish-time ${
+                                                            activity.completed ? 'text-emerald-600' : 
+                                                            state.currentTaskIndex === index ? 'text-blue-600' : 'text-slate-700'
+                                                        }">
+                                                            ${timeInfo.finishTime}
+                                                        </div>
+                                                        ${!activity.completed && state.currentTaskIndex !== index ? 
+                                                            '<div class="text-xs text-slate-500">Fertig um</div>' : 
+                                                            activity.completed ? 
+                                                            '<div class="text-xs text-emerald-500">Erledigt</div>' :
+                                                            '<div class="text-xs text-blue-500">Läuft bis</div>'}
+                                                    </div>
                                                 </div>
                                                 <div class="text-sm text-slate-500">
                                                     ${activity.duration} Minuten
@@ -525,7 +594,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="flex items-center space-x-2">
+                                            <div class="flex items-center space-x-2 ml-3">
                                                 ${!activity.completed && state.currentTaskIndex !== index ? `
                                                     <button onclick="startTask(${index})" class="p-2 text-blue-500 hover:bg-blue-100 rounded-xl transition-colors button-hover" title="Aufgabe starten">
                                                         <i data-lucide="play" class="w-4 h-4"></i>
@@ -536,8 +605,8 @@
                                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                                 </button>
                                             </div>
-                                        </div>
-                                    `).join('')}
+                                        </div>`;
+                                    }).join('')}
                                     
                                     ${state.activities.filter(a => !a.completed).length > 0 && state.currentTaskIndex === -1 ? `
                                         <button onclick="startNextTask()" class="w-full mt-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-4 rounded-2xl font-medium hover:shadow-lg transition-all flex items-center justify-center space-x-2 button-hover">
@@ -707,6 +776,31 @@
             if (taskTimerEl && timeLeft !== null) {
                 taskTimerEl.textContent = `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`;
             }
+            
+            // Aktivitäten Finish-Zeiten aktualisieren
+            updateActivityTimes();
+        }
+        
+        // Aktivitäten-Zeiten aktualisieren ohne komplettes Re-Render
+        function updateActivityTimes() {
+            const activityTimes = calculateActivityTimes();
+            
+            // Alle Activity-Time-Elemente finden und aktualisieren
+            const activityTimeElements = document.querySelectorAll('.activity-finish-time');
+            activityTimeElements.forEach((el, index) => {
+                if (activityTimes[index]) {
+                    el.textContent = activityTimes[index].finishTime;
+                    
+                    // Farbe je nach Status
+                    if (activityTimes[index].isCompleted) {
+                        el.className = 'font-mono font-bold text-lg activity-finish-time text-emerald-600';
+                    } else if (activityTimes[index].isCurrent) {
+                        el.className = 'font-mono font-bold text-lg activity-finish-time text-blue-600';
+                    } else {
+                        el.className = 'font-mono font-bold text-lg activity-finish-time text-slate-700';
+                    }
+                }
+            });
         }
         
         // Force vollständiges Re-Render (für Edge Cases)
