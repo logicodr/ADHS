@@ -17,18 +17,6 @@
             background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%);
         }
         
-        .task-glow {
-            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
-        }
-        
-        .button-hover {
-            transition: all 0.2s ease;
-        }
-        
-        .button-hover:hover {
-            transform: translateY(-1px);
-        }
-        
         .current-task-border {
             border: 2px solid #3B82F6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
@@ -37,18 +25,11 @@
 </head>
 <body class="min-h-screen gradient-bg">
     <div id="app">
-        <!-- App wird hier geladen -->
+        <!-- Loading... -->
     </div>
 
     <script>
-        // Lucide Icons Setup
-        lucide.createIcons();
-        
-        // Service Worker und Alarm-System
-        let serviceWorker = null;
-        let alarmSystemReady = false;
-        
-        // App State
+        // Simple State
         let state = {
             currentTime: new Date(),
             activities: [],
@@ -61,294 +42,12 @@
             taskStartTime: null,
             isPaused: false,
             newActivity: { name: '', duration: 15 },
-            alarmScheduled: false,
-            lastAlarmCheck: null
+            // Alarm state
+            departureAlarmTimeout: null,
+            taskAlarmTimeouts: new Map()
         };
 
-        // Service Worker Registration und Alarm-System
-        async function initServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                try {
-                    const registration = await navigator.serviceWorker.register('/service-worker.js');
-                    console.log('Service Worker registered:', registration);
-                    
-                    serviceWorker = registration;
-                    alarmSystemReady = true;
-                    
-                    // Message-Handler für Service Worker
-                    navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
-                    
-                    return registration;
-                } catch (error) {
-                    console.error('Service Worker registration failed:', error);
-                    // Fallback auf einfaches Browser-Alarm-System
-                    initSimpleAlarmSystem();
-                }
-            } else {
-                console.log('Service Worker not supported');
-                initSimpleAlarmSystem();
-            }
-        }
-        
-        // Message-Handler für Service Worker
-        function handleServiceWorkerMessage(event) {
-            const { type, data } = event.data;
-            
-            switch (type) {
-                case 'TASK_ALARM':
-                    showTaskCompletionNotification(data.taskName);
-                    playAlarm();
-                    break;
-                case 'DEPARTURE_ALARM':
-                    showDepartureNotification(data.departureTime, data.alarmMinutes);
-                    playAlarm();
-                    break;
-                case 'ALARM_STATUS':
-                    console.log('Alarm Status:', data);
-                    break;
-            }
-        }
-        
-        // Fallback: Einfaches Browser-Alarm-System
-        let simpleAlarmTimeout = null;
-        let taskAlarmTimeouts = new Map();
-        
-        function initSimpleAlarmSystem() {
-            console.log('Using simple browser alarm system');
-            alarmSystemReady = true;
-        }
-        
-        // Alarm-Scheduling Funktionen
-        async function scheduleAlarms() {
-            if (!alarmSystemReady) return;
-            
-            // Verhindere Mehrfach-Scheduling
-            if (state.alarmScheduled) {
-                console.log('Alarms already scheduled, skipping');
-                return;
-            }
-            
-            state.alarmScheduled = true;
-            state.lastAlarmCheck = new Date();
-            
-            try {
-                if (serviceWorker) {
-                    await scheduleAlarmsWithServiceWorker();
-                } else {
-                    await scheduleAlarmsSimple();
-                }
-                
-                console.log('Alarms scheduled successfully');
-                saveState();
-            } catch (error) {
-                console.error('Error scheduling alarms:', error);
-                state.alarmScheduled = false;
-            }
-        }
-        
-        async function scheduleAlarmsWithServiceWorker() {
-            // Alle Alarme abbrechen
-            navigator.serviceWorker.controller?.postMessage({
-                type: 'CANCEL_ALL_ALARMS'
-            });
-            
-            // Abfahrts-Alarm
-            if (state.alarmEnabled) {
-                const now = new Date();
-                const [hours, minutes] = state.departureTime.split(':').map(Number);
-                const departureDate = new Date(now);
-                departureDate.setHours(hours, minutes, 0, 0);
-                
-                // Wenn heute schon vorbei, dann morgen
-                if (departureDate <= now) {
-                    departureDate.setDate(departureDate.getDate() + 1);
-                }
-                
-                const alarmDate = new Date(departureDate.getTime() - (state.alarmMinutes * 60 * 1000));
-                
-                navigator.serviceWorker.controller?.postMessage({
-                    type: 'SCHEDULE_DEPARTURE_ALARM',
-                    departureTime: state.departureTime,
-                    alarmMinutes: state.alarmMinutes,
-                    alarmTime: alarmDate.toISOString()
-                });
-            }
-            
-            // Task-Alarme
-            state.activities.forEach(activity => {
-                if (!activity.completed && activity.endTime) {
-                    navigator.serviceWorker.controller?.postMessage({
-                        type: 'SCHEDULE_TASK_ALARM',
-                        taskId: activity.id,
-                        taskName: activity.name,
-                        endTime: activity.endTime
-                    });
-                }
-            });
-        }
-        
-        async function scheduleAlarmsSimple() {
-            // Alte Timeouts löschen
-            if (simpleAlarmTimeout) {
-                clearTimeout(simpleAlarmTimeout);
-                simpleAlarmTimeout = null;
-            }
-            
-            taskAlarmTimeouts.forEach(timeout => clearTimeout(timeout));
-            taskAlarmTimeouts.clear();
-            
-            // Abfahrts-Alarm
-            if (state.alarmEnabled) {
-                const now = new Date();
-                const [hours, minutes] = state.departureTime.split(':').map(Number);
-                const departureDate = new Date(now);
-                departureDate.setHours(hours, minutes, 0, 0);
-                
-                if (departureDate <= now) {
-                    departureDate.setDate(departureDate.getDate() + 1);
-                }
-                
-                const alarmDate = new Date(departureDate.getTime() - (state.alarmMinutes * 60 * 1000));
-                const timeUntilAlarm = alarmDate.getTime() - now.getTime();
-                
-                if (timeUntilAlarm > 0) {
-                    simpleAlarmTimeout = setTimeout(() => {
-                        showDepartureNotification(state.departureTime, state.alarmMinutes);
-                        playAlarm();
-                    }, timeUntilAlarm);
-                    
-                    console.log(`Departure alarm set for ${Math.floor(timeUntilAlarm / 60000)} minutes from now`);
-                }
-            }
-            
-            // Task-Alarme
-            const now = new Date();
-            state.activities.forEach(activity => {
-                if (!activity.completed && activity.endTime) {
-                    const endTime = new Date(activity.endTime);
-                    const timeUntilAlarm = endTime.getTime() - now.getTime();
-                    
-                    if (timeUntilAlarm > 0) {
-                        const timeout = setTimeout(() => {
-                            showTaskCompletionNotification(activity.name);
-                            playAlarm();
-                            
-                            // Task automatisch als erledigt markieren
-                            toggleActivity(activity.id);
-                        }, timeUntilAlarm);
-                        
-                        taskAlarmTimeouts.set(activity.id, timeout);
-                        console.log(`Task alarm for '${activity.name}' set for ${Math.floor(timeUntilAlarm / 60000)} minutes from now`);
-                    }
-                }
-            });
-        }
-        
-        // Alarm-Funktionen
-        function playAlarm() {
-            console.log("🔔 ALARM TRIGGERED!");
-            
-            // Vibration falls unterstützt
-            if ('vibrate' in navigator) {
-                navigator.vibrate([300, 200, 300, 200, 300]);
-            }
-            
-            // Klassisches Browser-Audio
-            try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                const audioContext = new AudioContext();
-                
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = 800;
-                oscillator.type = 'sine';
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                
-                oscillator.start();
-                
-                // Beep-Pattern
-                setTimeout(() => {
-                    oscillator.frequency.value = 1000;
-                    setTimeout(() => {
-                        oscillator.frequency.value = 800;
-                        setTimeout(() => {
-                            oscillator.stop();
-                            audioContext.close();
-                        }, 500);
-                    }, 500);
-                }, 500);
-                
-            } catch (e) {
-                console.warn('Audio API not supported');
-                // Fallback Alert
-                alert(`🔔 ALARM: Zeit zum Handeln!`);
-            }
-        }
-        
-        function showTaskCompletionNotification(taskName) {
-            // Browser-Notification falls unterstützt
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('ADHS Jetzt-Planer', {
-                    body: `Aufgabe abgeschlossen: ${taskName}`,
-                    icon: '/icon-192x192.png',
-                    vibrate: [200, 100, 200]
-                });
-            }
-            
-            // Visuelle Benachrichtigung
-            showNotification(`Aufgabe abgeschlossen: ${taskName}`, 5000);
-        }
-        
-        function showDepartureNotification(departureTime, alarmMinutes) {
-            const message = `In ${alarmMinutes} Minuten musst du rausgehen! (${departureTime})`;
-            
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('ADHS Jetzt-Planer', {
-                    body: message,
-                    icon: '/icon-192x192.png',
-                    vibrate: [300, 200, 300]
-                });
-            }
-            
-            showNotification(message, 10000);
-        }
-        
-        // Notification-Permission anfordern
-        async function requestNotificationPermission() {
-            if ('Notification' in window && Notification.permission === 'default') {
-                const permission = await Notification.requestPermission();
-                console.log('Notification permission:', permission);
-                return permission === 'granted';
-            }
-            return Notification.permission === 'granted';
-        }
-        
-        // Visuelle Benachrichtigung im Interface
-        function showNotification(message, duration = 5000) {
-            // Erstelle Notification Element falls nicht vorhanden
-            let notification = document.getElementById('notification');
-            if (!notification) {
-                notification = document.createElement('div');
-                notification.id = 'notification';
-                notification.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
-                document.body.appendChild(notification);
-            }
-            
-            notification.textContent = message;
-            notification.style.opacity = '1';
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 300);
-            }, duration);
-        }
+        // === TIME FUNCTIONS ===
         function getCurrentMinutes() {
             return state.currentTime.getHours() * 60 + state.currentTime.getMinutes();
         }
@@ -381,188 +80,9 @@
             const hours = Math.floor(minutes / 60);
             const mins = minutes % 60;
             if (hours === 0) return `${mins} Minuten`;
-            return `${hours} Stunde${hours !== 1 ? 'n' : ''} ${mins > 0 ? `und ${mins} Minuten` : ''}`;
+            return `${hours} Stunde${hours !== 1 ? 'n' : ''} ${mins > 0 ? ` und ${mins} Minuten` : ''}`;
         }
 
-        // Event Handlers
-        function addActivity() {
-            if (!state.newActivity.name.trim()) return;
-            
-            const activity = {
-                id: Date.now(),
-                name: state.newActivity.name.trim(),
-                duration: parseInt(state.newActivity.duration),
-                completed: false,
-                createdAt: new Date()
-            };
-            
-            state.activities.push(activity);
-            state.newActivity = { name: '', duration: 15 };
-            state.showAddForm = false;
-            saveState();
-            renderSafe();
-            
-            // Alarme neu planen da neue Aktivität hinzugefügt
-            state.alarmScheduled = false;
-            scheduleAlarms();
-            
-            // Zeiten neu berechnen
-            setTimeout(updateActivityTimes, 100);
-        }
-
-        function updateActivityName(value) {
-            state.newActivity.name = value;
-            // Kein Re-Render beim Tippen!
-        }
-
-        function updateActivityDuration(value) {
-            state.newActivity.duration = value;
-            // Kein Re-Render beim Tippen!
-        }
-
-        function toggleActivity(id) {
-            const activity = state.activities.find(a => a.id === id);
-            if (activity) {
-                activity.completed = !activity.completed;
-                saveState();
-                renderSafe();
-            }
-        }
-
-        function deleteActivity(id) {
-            state.activities = state.activities.filter(a => a.id !== id);
-            saveState();
-            renderSafe();
-        }
-
-        function clearAll() {
-            if (confirm('Alle Aktivitäten löschen?')) {
-                state.activities = [];
-                state.currentTaskIndex = -1;
-                state.taskStartTime = null;
-                state.isPaused = false;
-                saveState();
-                renderSafe();
-            }
-        }
-
-        function startTask(index) {
-            state.currentTaskIndex = index;
-            state.taskStartTime = new Date();
-            state.isPaused = false;
-            
-            // Task EndTime setzen falls noch nicht vorhanden
-            const currentTask = state.activities[index];
-            if (!currentTask.endTime) {
-                const endTime = new Date(Date.now() + (currentTask.duration * 60 * 1000));
-                currentTask.endTime = endTime.toISOString();
-            }
-            
-            saveState();
-            renderSafe();
-            
-            // Alarme neu planen da sich Zeiten geändert haben
-            state.alarmScheduled = false;
-            scheduleAlarms();
-            
-            // Sofort Activity-Zeiten aktualisieren
-            setTimeout(updateActivityTimes, 100);
-        }
-
-        function pauseResumeTask() {
-            state.isPaused = !state.isPaused;
-            renderSafe();
-        }
-
-        function completeCurrentTask() {
-            if (state.currentTaskIndex !== -1) {
-                const currentActivity = state.activities[state.currentTaskIndex];
-                if (currentActivity) {
-                    currentActivity.completed = true;
-                    state.currentTaskIndex = -1;
-                    state.taskStartTime = null;
-                    state.isPaused = false;
-                    
-                    // Auto-start nächste Aufgabe
-                    setTimeout(() => {
-                        const nextIndex = state.activities.findIndex(a => !a.completed);
-                        if (nextIndex !== -1) {
-                            startTask(nextIndex);
-                        }
-                    }, 500);
-                    
-                    saveState();
-                    renderSafe();
-                }
-            }
-        }
-
-        function startNextTask() {
-            const nextIndex = state.activities.findIndex(a => !a.completed);
-            if (nextIndex !== -1) {
-                startTask(nextIndex);
-            }
-        }
-
-        // Zeit-Berechnungen für Aktivitäten
-        function calculateActivityTimes() {
-            let currentTime = new Date();
-            
-            // Wenn eine Aufgabe läuft, starte von deren ursprünglicher Startzeit
-            if (state.currentTaskIndex !== -1 && state.taskStartTime) {
-                currentTime = new Date(state.taskStartTime);
-            }
-            
-            const times = [];
-            
-            state.activities.forEach((activity, index) => {
-                if (activity.completed) {
-                    times.push({ finishTime: '✓', isCompleted: true });
-                } else if (index === state.currentTaskIndex) {
-                    // Aktuelle Aufgabe - berechne basierend auf verbleibender Zeit
-                    const timeLeft = getCurrentTaskTimeLeft();
-                    if (timeLeft !== null) {
-                        const finishTime = new Date(Date.now() + (timeLeft * 60000));
-                        times.push({ 
-                            finishTime: finishTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
-                            isCompleted: false,
-                            isCurrent: true
-                        });
-                    } else {
-                        const finishTime = new Date(currentTime.getTime() + (activity.duration * 60000));
-                        times.push({ 
-                            finishTime: finishTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
-                            isCompleted: false,
-                            isCurrent: true
-                        });
-                        currentTime = finishTime;
-                    }
-                } else {
-                    // Zukünftige Aufgaben
-                    const finishTime = new Date(currentTime.getTime() + (activity.duration * 60000));
-                    times.push({ 
-                        finishTime: finishTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
-                        isCompleted: false,
-                        isCurrent: false
-                    });
-                    currentTime = finishTime;
-                }
-            });
-            
-            return times;
-        }
-        function getCurrentTaskTimeLeft() {
-            if (state.currentTaskIndex === -1 || !state.taskStartTime || state.isPaused) return null;
-            
-            const currentTask = state.activities[state.currentTaskIndex];
-            if (!currentTask) return null;
-            
-            const elapsedMinutes = Math.floor((state.currentTime - state.taskStartTime) / 60000);
-            const remaining = currentTask.duration - elapsedMinutes;
-            return Math.max(0, remaining);
-        }
-
-        // Buffer Farben
         function getBufferColor() {
             const buffer = getBufferMinutes();
             if (buffer < 10) return 'text-red-600 bg-red-50';
@@ -577,74 +97,383 @@
             return 'text-slate-600';
         }
 
-        // Storage
-        function saveState() {
-            try {
-                const stateToSave = { ...state };
-                // Remove non-serializable data
-                delete stateToSave.currentTime;
-                localStorage.setItem('adhs-planer-state', JSON.stringify(stateToSave));
-            } catch (e) {
-                console.warn('Could not save state');
-            }
-        }
+        // === ACTIVITY TIME CALCULATION ===
+        function calculateActivityFinishTimes() {
+            let currentTime = new Date();
+            const times = [];
 
-        function loadState() {
-            try {
-                const saved = localStorage.getItem('adhs-planer-state');
-                if (saved) {
-                    const parsedState = JSON.parse(saved);
-                    state = { ...state, ...parsedState };
-                    
-                    // Convert date strings back to Date objects
-                    if (state.taskStartTime) {
-                        state.taskStartTime = new Date(state.taskStartTime);
+            // Wenn Task läuft, starte von jetzt
+            if (state.currentTaskIndex !== -1 && state.taskStartTime && !state.isPaused) {
+                currentTime = new Date(); // Immer von jetzt starten wenn Task läuft
+            }
+
+            state.activities.forEach((activity, index) => {
+                if (activity.completed) {
+                    times.push('✓');
+                } else if (index === state.currentTaskIndex && !state.isPaused) {
+                    // Laufende Aufgabe - berechne basierend auf verbleibender Zeit
+                    const timeLeft = getCurrentTaskTimeLeft();
+                    if (timeLeft !== null) {
+                        const finishTime = new Date(Date.now() + (timeLeft * 60000));
+                        times.push(formatTimeHHMM(finishTime));
+                    } else {
+                        const finishTime = new Date(currentTime.getTime() + (activity.duration * 60000));
+                        times.push(formatTimeHHMM(finishTime));
+                        currentTime = finishTime;
                     }
-                    
-                    // Convert activity endTimes back to Date objects
-                    state.activities.forEach(activity => {
-                        if (activity.endTime && typeof activity.endTime === 'string') {
-                            activity.endTime = activity.endTime; // Keep as ISO string for easier handling
-                        }
-                    });
-                    
-                    // Reset alarm scheduled flag on page load (alarm system needs to be re-initialized)
-                    state.alarmScheduled = false;
-                    state.lastAlarmCheck = null;
+                } else {
+                    // Geplante Aufgabe
+                    const finishTime = new Date(currentTime.getTime() + (activity.duration * 60000));
+                    times.push(formatTimeHHMM(finishTime));
+                    currentTime = finishTime;
                 }
+            });
+
+            return times;
+        }
+
+        function formatTimeHHMM(date) {
+            return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // === TASK TIMER ===
+        function getCurrentTaskTimeLeft() {
+            if (state.currentTaskIndex === -1 || !state.taskStartTime || state.isPaused) return null;
+            
+            const currentTask = state.activities[state.currentTaskIndex];
+            if (!currentTask) return null;
+            
+            const elapsedMinutes = Math.floor((state.currentTime - state.taskStartTime) / 60000);
+            const remaining = currentTask.duration - elapsedMinutes;
+            return Math.max(0, remaining);
+        }
+
+        // === ALARM SYSTEM ===
+        function playAlarm() {
+            console.log("🔔 ALARM!");
+            
+            // Vibration
+            if ('vibrate' in navigator) {
+                navigator.vibrate([500, 200, 500, 200, 500]);
+            }
+            
+            // Audio
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                gainNode.gain.value = 0.3;
+                
+                oscillator.start();
+                setTimeout(() => oscillator.stop(), 2000);
+                
             } catch (e) {
-                console.warn('Could not load state');
+                // Fallback
+                alert('🔔 ALARM!');
             }
         }
 
-        // Render Funktion (Smart - behält Input-Focus)
-        function renderSafe() {
-            // Speichere aktuellen Focus
-            const activeElement = document.activeElement;
-            const activeId = activeElement ? activeElement.id : null;
-            const activeValue = activeElement ? activeElement.value : null;
-            const activeSelectionStart = activeElement ? activeElement.selectionStart : null;
+        function showNotification(message, duration = 5000) {
+            // Browser notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('ADHS Jetzt-Planer', {
+                    body: message,
+                    icon: '/icon-192x192.png',
+                    vibrate: [200, 100, 200]
+                });
+            }
             
+            // Visual notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-sm text-center';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, duration);
+        }
+
+        function scheduleAlarms() {
+            // Clear existing alarms
+            clearAllAlarms();
+            
+            console.log('🔔 Scheduling alarms...');
+            
+            // Departure alarm
+            if (state.alarmEnabled) {
+                scheduleDepartureAlarm();
+            }
+            
+            // Task alarms
+            scheduleTaskAlarms();
+        }
+
+        function clearAllAlarms() {
+            if (state.departureAlarmTimeout) {
+                clearTimeout(state.departureAlarmTimeout);
+                state.departureAlarmTimeout = null;
+            }
+            
+            state.taskAlarmTimeouts.forEach(timeout => clearTimeout(timeout));
+            state.taskAlarmTimeouts.clear();
+        }
+
+        function scheduleDepartureAlarm() {
+            const now = new Date();
+            const [hours, minutes] = state.departureTime.split(':').map(Number);
+            
+            let departureDate = new Date(now);
+            departureDate.setHours(hours, minutes, 0, 0);
+            
+            // If time passed today, schedule for tomorrow
+            if (departureDate <= now) {
+                departureDate.setDate(departureDate.getDate() + 1);
+            }
+            
+            const alarmDate = new Date(departureDate.getTime() - (state.alarmMinutes * 60 * 1000));
+            const timeUntilAlarm = alarmDate.getTime() - now.getTime();
+            
+            if (timeUntilAlarm > 0) {
+                state.departureAlarmTimeout = setTimeout(() => {
+                    playAlarm();
+                    showNotification(`In ${state.alarmMinutes} Minuten musst du rausgehen! (${state.departureTime})`);
+                }, timeUntilAlarm);
+                
+                console.log(`🔔 Departure alarm in ${Math.round(timeUntilAlarm / 60000)} minutes`);
+            }
+        }
+
+        function scheduleTaskAlarms() {
+            const now = new Date();
+            let currentTime = new Date(now);
+            
+            state.activities.forEach((activity, index) => {
+                if (activity.completed) return;
+                
+                if (index === state.currentTaskIndex && state.taskStartTime && !state.isPaused) {
+                    // Running task - alarm when time is up
+                    const timeLeft = getCurrentTaskTimeLeft();
+                    if (timeLeft !== null && timeLeft > 0) {
+                        const timeout = setTimeout(() => {
+                            playAlarm();
+                            showNotification(`Zeit abgelaufen: ${activity.name}`);
+                            
+                            // Auto complete task
+                            setTimeout(() => {
+                                if (!activity.completed) {
+                                    toggleActivity(activity.id);
+                                }
+                            }, 2000);
+                        }, timeLeft * 60000);
+                        
+                        state.taskAlarmTimeouts.set(activity.id, timeout);
+                        console.log(`🔔 Task alarm for "${activity.name}" in ${timeLeft} minutes`);
+                    }
+                } else {
+                    // Future task - calculate when it would finish
+                    const finishTime = new Date(currentTime.getTime() + (activity.duration * 60000));
+                    currentTime = finishTime;
+                    
+                    const timeUntilFinish = finishTime.getTime() - now.getTime();
+                    if (timeUntilFinish > 0) {
+                        const timeout = setTimeout(() => {
+                            playAlarm();
+                            showNotification(`Zeit für: ${activity.name}`);
+                        }, timeUntilFinish);
+                        
+                        state.taskAlarmTimeouts.set(activity.id, timeout);
+                        console.log(`🔔 Future task "${activity.name}" finishes in ${Math.round(timeUntilFinish / 60000)} minutes`);
+                    }
+                }
+            });
+        }
+
+        // === EVENT HANDLERS ===
+        function addActivity() {
+            if (!state.newActivity.name.trim()) return;
+            
+            const activity = {
+                id: Date.now(),
+                name: state.newActivity.name.trim(),
+                duration: parseInt(state.newActivity.duration),
+                completed: false
+            };
+            
+            state.activities.push(activity);
+            state.newActivity = { name: '', duration: 15 };
+            state.showAddForm = false;
+            
+            saveState();
             render();
+            scheduleAlarms();
+        }
+
+        function toggleActivity(id) {
+            const activity = state.activities.find(a => a.id === id);
+            if (activity) {
+                activity.completed = !activity.completed;
+                
+                // If we completed the current task, move to next
+                if (activity.completed && state.currentTaskIndex !== -1 && 
+                    state.activities[state.currentTaskIndex].id === id) {
+                    
+                    state.currentTaskIndex = -1;
+                    state.taskStartTime = null;
+                    state.isPaused = false;
+                    
+                    // Auto start next task
+                    const nextIndex = state.activities.findIndex(a => !a.completed);
+                    if (nextIndex !== -1) {
+                        setTimeout(() => startTask(nextIndex), 1000);
+                    }
+                }
+                
+                saveState();
+                render();
+                scheduleAlarms();
+            }
+        }
+
+        function deleteActivity(id) {
+            const index = state.activities.findIndex(a => a.id === id);
+            if (index !== -1) {
+                // If deleting current task, reset
+                if (index === state.currentTaskIndex) {
+                    state.currentTaskIndex = -1;
+                    state.taskStartTime = null;
+                    state.isPaused = false;
+                }
+                
+                state.activities.splice(index, 1);
+                
+                // Adjust current task index
+                if (state.currentTaskIndex > index) {
+                    state.currentTaskIndex--;
+                }
+                
+                saveState();
+                render();
+                scheduleAlarms();
+            }
+        }
+
+        function clearAll() {
+            if (confirm('Alle Aktivitäten löschen?')) {
+                state.activities = [];
+                state.currentTaskIndex = -1;
+                state.taskStartTime = null;
+                state.isPaused = false;
+                
+                saveState();
+                render();
+                scheduleAlarms();
+            }
+        }
+
+        function startTask(index) {
+            state.currentTaskIndex = index;
+            state.taskStartTime = new Date();
+            state.isPaused = false;
             
-            // Stelle Focus wieder her
-            if (activeId) {
-                const element = document.getElementById(activeId);
-                if (element) {
-                    element.focus();
-                    if (activeValue !== null) {
-                        element.value = activeValue;
-                    }
-                    if (activeSelectionStart !== null && element.setSelectionRange) {
-                        element.setSelectionRange(activeSelectionStart, activeSelectionStart);
-                    }
+            saveState();
+            render();
+            scheduleAlarms();
+        }
+
+        function pauseResumeTask() {
+            if (state.currentTaskIndex !== -1) {
+                state.isPaused = !state.isPaused;
+                
+                // Adjust start time when resuming
+                if (!state.isPaused && state.taskStartTime) {
+                    const pausedDuration = Date.now() - state.taskStartTime.getTime();
+                    // Don't adjust - keep original start time for simplicity
+                }
+                
+                render();
+                scheduleAlarms();
+            }
+        }
+
+        function completeCurrentTask() {
+            if (state.currentTaskIndex !== -1) {
+                const currentActivity = state.activities[state.currentTaskIndex];
+                if (currentActivity) {
+                    toggleActivity(currentActivity.id);
                 }
             }
         }
 
+        function startNextTask() {
+            const nextIndex = state.activities.findIndex(a => !a.completed);
+            if (nextIndex !== -1) {
+                startTask(nextIndex);
+            }
+        }
+
+        // Form handlers
+        function toggleAddForm() {
+            state.showAddForm = !state.showAddForm;
+            render();
+        }
+
+        function cancelAddForm() {
+            state.showAddForm = false;
+            state.newActivity = { name: '', duration: 15 };
+            render();
+        }
+
+        function toggleSettings() {
+            state.showSettings = !state.showSettings;
+            render();
+        }
+
+        function updateActivityName(value) {
+            state.newActivity.name = value;
+        }
+
+        function updateActivityDuration(value) {
+            state.newActivity.duration = value;
+        }
+
+        function updateDepartureTime(value) {
+            state.departureTime = value;
+            saveState();
+            scheduleAlarms();
+        }
+
+        function updateAlarmMinutes(value) {
+            state.alarmMinutes = parseInt(value);
+            saveState();
+            scheduleAlarms();
+        }
+
+        function toggleAlarm() {
+            state.alarmEnabled = !state.alarmEnabled;
+            saveState();
+            scheduleAlarms();
+            render();
+        }
+
+        function testAlarm() {
+            playAlarm();
+            showNotification('🔔 Test-Alarm! So klingt der echte Alarm.', 3000);
+        }
+
+        // === RENDER ===
         function render() {
             const app = document.getElementById('app');
             const timeLeft = getCurrentTaskTimeLeft();
+            const activityTimes = calculateActivityFinishTimes();
             
             app.innerHTML = `
                 <!-- Header -->
@@ -661,10 +490,10 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <div class="text-2xl font-mono font-bold text-slate-800 current-time">
+                                <div class="text-2xl font-mono font-bold text-slate-800">
                                     ${state.currentTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
-                                <div class="text-sm text-slate-500 current-date">
+                                <div class="text-sm text-slate-500">
                                     ${state.currentTime.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}
                                 </div>
                             </div>
@@ -676,7 +505,7 @@
                     <!-- Zeit-Übersicht -->
                     <div class="glass-effect rounded-3xl p-6 shadow-lg border border-white/50">
                         <div class="text-center mb-6">
-                            <h2 class="text-4xl font-bold mb-2 time-left-text ${getTimeLeftColor()}">
+                            <h2 class="text-4xl font-bold mb-2 ${getTimeLeftColor()}">
                                 ${getAvailableMinutes() > 0 ? formatTimeLeft(getAvailableMinutes()) : 'Zeit zum Gehen!'}
                             </h2>
                             <p class="text-slate-600">bis du um ${state.departureTime} rausmusst</p>
@@ -684,15 +513,15 @@
                         
                         <div class="grid grid-cols-3 gap-4">
                             <div class="text-center p-4 bg-blue-50 rounded-2xl">
-                                <div class="text-2xl font-bold text-blue-600 available-time">${formatTime(getAvailableMinutes())}</div>
+                                <div class="text-2xl font-bold text-blue-600">${formatTime(getAvailableMinutes())}</div>
                                 <div class="text-sm text-blue-600">Verfügbar</div>
                             </div>
                             <div class="text-center p-4 bg-indigo-50 rounded-2xl">
-                                <div class="text-2xl font-bold text-indigo-600 planned-time">${formatTime(getPlannedMinutes())}</div>
+                                <div class="text-2xl font-bold text-indigo-600">${formatTime(getPlannedMinutes())}</div>
                                 <div class="text-sm text-indigo-600">Geplant</div>
                             </div>
                             <div class="text-center p-4 rounded-2xl ${getBufferColor()}">
-                                <div class="text-2xl font-bold buffer-time">${formatTime(getBufferMinutes())}</div>
+                                <div class="text-2xl font-bold">${formatTime(getBufferMinutes())}</div>
                                 <div class="text-sm">Puffer</div>
                             </div>
                         </div>
@@ -700,17 +529,17 @@
 
                     <!-- Aktuelle Aufgabe -->
                     ${state.currentTaskIndex !== -1 && state.activities[state.currentTaskIndex] ? `
-                        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-3xl p-6 text-white shadow-lg task-glow">
+                        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-3xl p-6 text-white shadow-lg">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center space-x-3">
                                     <i data-lucide="target" class="w-6 h-6"></i>
                                     <h3 class="font-semibold">Aktuelle Aufgabe</h3>
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <button onclick="pauseResumeTask()" class="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors button-hover">
+                                    <button onclick="pauseResumeTask()" class="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors">
                                         <i data-lucide="${state.isPaused ? 'play' : 'pause'}" class="w-5 h-5"></i>
                                     </button>
-                                    <button onclick="completeCurrentTask()" class="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors button-hover">
+                                    <button onclick="completeCurrentTask()" class="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors">
                                         <i data-lucide="check-circle" class="w-5 h-5"></i>
                                     </button>
                                 </div>
@@ -724,7 +553,7 @@
                                 </div>
                                 ${timeLeft !== null ? `
                                     <div class="text-right">
-                                        <div class="text-3xl font-mono font-bold task-timer">
+                                        <div class="text-3xl font-mono font-bold">
                                             ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}
                                         </div>
                                         <div class="text-emerald-100">verbleibend</div>
@@ -748,16 +577,16 @@
                                     Meine Aufgaben
                                 </h2>
                                 <div class="flex items-center space-x-2">
-                                    <button onclick="toggleAddForm()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 transition-colors button-hover">
+                                    <button onclick="toggleAddForm()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 transition-colors">
                                         <i data-lucide="plus" class="w-4 h-4"></i>
                                         <span>Neu</span>
                                     </button>
                                     ${state.activities.length > 0 ? `
-                                        <button onclick="clearAll()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl flex items-center space-x-2 transition-colors button-hover">
+                                        <button onclick="clearAll()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl flex items-center space-x-2 transition-colors">
                                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                                         </button>
                                     ` : ''}
-                                    <button onclick="toggleSettings()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-xl transition-colors button-hover">
+                                    <button onclick="toggleSettings()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-xl transition-colors">
                                         <i data-lucide="settings" class="w-4 h-4"></i>
                                     </button>
                                 </div>
@@ -778,11 +607,9 @@
                                             value="${state.newActivity.name}"
                                             placeholder="z.B. E-Mails checken"
                                             autocomplete="off"
-                                            autocorrect="off"
-                                            spellcheck="false"
                                             oninput="updateActivityName(this.value)"
                                             onkeydown="if(event.key==='Enter') addActivity()"
-                                            class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
                                     <div>
@@ -795,18 +622,16 @@
                                             value="${state.newActivity.duration}"
                                             min="1"
                                             max="180"
-                                            inputmode="numeric"
-                                            autocomplete="off"
                                             oninput="updateActivityDuration(this.value)"
                                             onkeydown="if(event.key==='Enter') addActivity()"
-                                            class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
                                     <div class="flex space-x-3">
-                                        <button onclick="addActivity()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition-colors button-hover">
+                                        <button onclick="addActivity()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium">
                                             Hinzufügen
                                         </button>
-                                        <button onclick="cancelAddForm()" class="px-6 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-medium transition-colors button-hover">
+                                        <button onclick="cancelAddForm()" class="px-6 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-medium">
                                             Abbrechen
                                         </button>
                                     </div>
@@ -824,28 +649,28 @@
                                         </label>
                                         <input
                                             type="time"
-                                            id="departure-time"
                                             value="${state.departureTime}"
                                             onchange="updateDepartureTime(this.value)"
                                             class="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
-                                        <p class="text-xs text-slate-500 mt-1">Zeit-Anzeige wird sofort aktualisiert</p>
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-medium text-slate-700">Alarm aktiviert</span>
-                                        <button onclick="toggleAlarm()" class="p-2 rounded-xl transition-colors ${state.alarmEnabled ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-400'}">
-                                            <i data-lucide="${state.alarmEnabled ? 'bell' : 'bell-off'}" class="w-4 h-4"></i>
-                                        </button>
-                                        <button onclick="testAlarm()" class="p-2 rounded-xl transition-colors bg-red-500 text-white hover:bg-red-600" title="Alarm testen">
-                                            <i data-lucide="volume-2" class="w-4 h-4"></i>
-                                        </button>
+                                        <div class="flex items-center space-x-2">
+                                            <button onclick="toggleAlarm()" class="p-2 rounded-xl transition-colors ${state.alarmEnabled ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-400'}">
+                                                <i data-lucide="${state.alarmEnabled ? 'bell' : 'bell-off'}" class="w-4 h-4"></i>
+                                            </button>
+                                            <button onclick="testAlarm()" class="p-2 rounded-xl bg-red-500 text-white hover:bg-red-600" title="Test">
+                                                <i data-lucide="volume-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                     ${state.alarmEnabled ? `
                                         <div>
                                             <label class="block text-sm font-medium text-slate-700 mb-2">
                                                 Alarm-Vorlaufzeit
                                             </label>
-                                            <select id="alarm-minutes" onchange="updateAlarmMinutes(this.value)" class="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                            <select onchange="updateAlarmMinutes(this.value)" class="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                                 <option value="5" ${state.alarmMinutes === 5 ? 'selected' : ''}>5 Minuten</option>
                                                 <option value="10" ${state.alarmMinutes === 10 ? 'selected' : ''}>10 Minuten</option>
                                                 <option value="15" ${state.alarmMinutes === 15 ? 'selected' : ''}>15 Minuten</option>
@@ -869,11 +694,7 @@
                                 </div>
                             ` : `
                                 <div class="space-y-3">
-                                    ${state.activities.map((activity, index) => {
-                                        const activityTimes = calculateActivityTimes();
-                                        const timeInfo = activityTimes[index] || { finishTime: '--:--', isCompleted: false };
-                                        
-                                        return `
+                                    ${state.activities.map((activity, index) => `
                                         <div class="flex items-center p-4 rounded-2xl transition-all ${
                                             activity.completed
                                                 ? 'bg-emerald-50 border border-emerald-200'
@@ -895,23 +716,25 @@
                                                         ${activity.name}
                                                     </div>
                                                     <div class="text-right">
-                                                        <div class="font-mono font-bold text-lg activity-finish-time ${
+                                                        <div class="font-mono font-bold text-lg ${
                                                             activity.completed ? 'text-emerald-600' : 
                                                             state.currentTaskIndex === index ? 'text-blue-600' : 'text-slate-700'
                                                         }">
-                                                            ${timeInfo.finishTime}
+                                                            ${activityTimes[index] || '--:--'}
                                                         </div>
-                                                        ${!activity.completed && state.currentTaskIndex !== index ? 
-                                                            '<div class="text-xs text-slate-500">Fertig um</div>' : 
-                                                            activity.completed ? 
-                                                            '<div class="text-xs text-emerald-500">Erledigt</div>' :
-                                                            '<div class="text-xs text-blue-500">Läuft bis</div>'}
+                                                        <div class="text-xs ${
+                                                            activity.completed ? 'text-emerald-500' : 
+                                                            state.currentTaskIndex === index ? 'text-blue-500' : 'text-slate-500'
+                                                        }">
+                                                            ${activity.completed ? 'Erledigt' : 
+                                                              state.currentTaskIndex === index ? 'Läuft bis' : 'Fertig um'}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="text-sm text-slate-500">
                                                     ${activity.duration} Minuten
                                                     ${state.currentTaskIndex === index && !state.isPaused ? 
-                                                        '<span class="ml-2 text-blue-600 font-medium">• Läuft gerade</span>' : ''}
+                                                        '<span class="ml-2 text-blue-600 font-medium">• Läuft</span>' : ''}
                                                     ${state.currentTaskIndex === index && state.isPaused ? 
                                                         '<span class="ml-2 text-amber-600 font-medium">• Pausiert</span>' : ''}
                                                 </div>
@@ -919,20 +742,20 @@
 
                                             <div class="flex items-center space-x-2 ml-3">
                                                 ${!activity.completed && state.currentTaskIndex !== index ? `
-                                                    <button onclick="startTask(${index})" class="p-2 text-blue-500 hover:bg-blue-100 rounded-xl transition-colors button-hover" title="Aufgabe starten">
+                                                    <button onclick="startTask(${index})" class="p-2 text-blue-500 hover:bg-blue-100 rounded-xl transition-colors" title="Starten">
                                                         <i data-lucide="play" class="w-4 h-4"></i>
                                                     </button>
                                                 ` : ''}
                                                 
-                                                <button onclick="deleteActivity(${activity.id})" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors button-hover">
+                                                <button onclick="deleteActivity(${activity.id})" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors">
                                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                                 </button>
                                             </div>
-                                        </div>`;
-                                    }).join('')}
+                                        </div>
+                                    `).join('')}
                                     
                                     ${state.activities.filter(a => !a.completed).length > 0 && state.currentTaskIndex === -1 ? `
-                                        <button onclick="startNextTask()" class="w-full mt-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-4 rounded-2xl font-medium hover:shadow-lg transition-all flex items-center justify-center space-x-2 button-hover">
+                                        <button onclick="startNextTask()" class="w-full mt-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-4 rounded-2xl font-medium hover:shadow-lg transition-all flex items-center justify-center space-x-2">
                                             <i data-lucide="play" class="w-5 h-5"></i>
                                             <span>Erste Aufgabe starten</span>
                                         </button>
@@ -946,136 +769,55 @@
             
             // Re-initialize Lucide icons
             lucide.createIcons();
-            
-            // Bind input events after render
-            bindInputEvents();
         }
 
-        // Zusätzliche Event Handler
-        function toggleAddForm() {
-            state.showAddForm = !state.showAddForm;
-            renderSafe();
-        }
-
-        function cancelAddForm() {
-            state.showAddForm = false;
-            state.newActivity = { name: '', duration: 15 };
-            renderSafe();
-        }
-
-        function toggleSettings() {
-            state.showSettings = !state.showSettings;
-            renderSafe();
-        }
-
-        function toggleAlarm() {
-            state.alarmEnabled = !state.alarmEnabled;
-            saveState();
-            renderSafe();
-        }
-
-        function updateDepartureTime(value) {
-            state.departureTime = value;
-            state.departureAlarmTriggered = false; // Reset alarm trigger
-            saveState();
-            
-            // Alarme neu planen da sich Abfahrtszeit geändert hat
-            state.alarmScheduled = false;
-            scheduleAlarms();
-            
-            // Vollständiges Re-Render nur bei wichtigen Änderungen
-            renderSafe();
-        }
-
-        function updateAlarmMinutes(value) {
-            state.alarmMinutes = parseInt(value);
-            state.departureAlarmTriggered = false; // Reset alarm trigger
-            saveState();
-            
-            // Alarme neu planen da sich Alarm-Zeit geändert hat
-            state.alarmScheduled = false;
-            scheduleAlarms();
-        }
-        
-        function toggleAlarm() {
-            state.alarmEnabled = !state.alarmEnabled;
-            state.departureAlarmTriggered = false; // Reset alarm trigger
-            saveState();
-            
-            // Alarme neu planen da sich Alarm-Status geändert hat
-            state.alarmScheduled = false;
-            scheduleAlarms();
-            
-            renderSafe();
-        }
-        
-        // Test-Alarm Funktion
-        function testAlarm() {
-            console.log('🔔 Testing alarm system...');
-            playAlarm();
-            showNotification('🔔 Alarm-Test! Das ist wie der echte Alarm klingt.', 3000);
-            
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('ADHS Jetzt-Planer - Test', {
-                    body: 'Das ist ein Test-Alarm. So wirst du benachrichtigt!',
-                    icon: '/icon-192x192.png',
-                    vibrate: [200, 100, 200]
-                });
+        // === STORAGE ===
+        function saveState() {
+            try {
+                const stateToSave = { ...state };
+                delete stateToSave.currentTime;
+                delete stateToSave.departureAlarmTimeout;
+                delete stateToSave.taskAlarmTimeouts;
+                localStorage.setItem('adhs-planer-state', JSON.stringify(stateToSave));
+            } catch (e) {
+                console.warn('Could not save state');
             }
         }
 
-        function bindInputEvents() {
-            const activityNameInput = document.getElementById('activity-name');
-            const activityDurationInput = document.getElementById('activity-duration');
-            const departureTimeInput = document.getElementById('departure-time');
-            const alarmMinutesSelect = document.getElementById('alarm-minutes');
-
-            if (activityNameInput) {
-                activityNameInput.addEventListener('input', (e) => {
-                    state.newActivity.name = e.target.value;
-                });
-                activityNameInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') addActivity();
-                });
-            }
-
-            if (activityDurationInput) {
-                activityDurationInput.addEventListener('input', (e) => {
-                    state.newActivity.duration = e.target.value;
-                });
-                activityDurationInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') addActivity();
-                });
-            }
-
-            if (departureTimeInput) {
-                departureTimeInput.addEventListener('change', (e) => {
-                    state.departureTime = e.target.value;
-                    saveState();
-                });
-            }
-
-            if (alarmMinutesSelect) {
-                alarmMinutesSelect.addEventListener('change', (e) => {
-                    state.alarmMinutes = parseInt(e.target.value);
-                    saveState();
-                });
+        function loadState() {
+            try {
+                const saved = localStorage.getItem('adhs-planer-state');
+                if (saved) {
+                    const parsedState = JSON.parse(saved);
+                    state = { ...state, ...parsedState };
+                    
+                    if (state.taskStartTime) {
+                        state.taskStartTime = new Date(state.taskStartTime);
+                    }
+                    
+                    // Reset alarm timeouts (will be recreated)
+                    state.departureAlarmTimeout = null;
+                    state.taskAlarmTimeouts = new Map();
+                }
+            } catch (e) {
+                console.warn('Could not load state');
             }
         }
 
-        // Initialize App
+        // === INIT ===
         async function init() {
             loadState();
             
-            // Service Worker und Alarm-System initialisieren
-            await initServiceWorker();
-            await requestNotificationPermission();
+            // Request notification permission
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
             
-            // Update time every second - aber nur wenn kein Input aktiv ist!
+            // Update time every second
             setInterval(() => {
                 state.currentTime = new Date();
                 
-                // Prüfe ob User gerade tippt
+                // Only re-render if not typing
                 const activeElement = document.activeElement;
                 const isTyping = activeElement && (
                     activeElement.tagName === 'INPUT' || 
@@ -1084,165 +826,19 @@
                 );
                 
                 if (!isTyping) {
-                    // Nur Zeit-Elemente aktualisieren, nicht alles neu rendern
-                    updateTimeOnly();
+                    render();
                 }
             }, 1000);
             
-            renderSafe();
+            render();
             
-            // Alarme nach dem ersten Render planen
+            // Schedule alarms after first render
             setTimeout(() => {
                 scheduleAlarms();
             }, 1000);
         }
-        
-        // Nur Zeit aktualisieren ohne komplettes Re-Render
-        function updateTimeOnly() {
-            // Aktuelle Zeit
-            const timeElements = document.querySelectorAll('.current-time');
-            timeElements.forEach(el => {
-                if (el) {
-                    el.textContent = state.currentTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-                }
-            });
-            
-            // Datum
-            const dateElements = document.querySelectorAll('.current-date');
-            dateElements.forEach(el => {
-                if (el) {
-                    el.textContent = state.currentTime.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
-                }
-            });
-            
-            // Zeit-Übersicht
-            const timeLeftEl = document.querySelector('.time-left-text');
-            if (timeLeftEl) {
-                const available = getAvailableMinutes();
-                timeLeftEl.textContent = available > 0 ? formatTimeLeft(available) : 'Zeit zum Gehen!';
-                timeLeftEl.className = `text-4xl font-bold mb-2 time-left-text ${getTimeLeftColor()}`;
-            }
-            
-            // Zeit-Boxen
-            const availableEl = document.querySelector('.available-time');
-            const plannedEl = document.querySelector('.planned-time');
-            const bufferEl = document.querySelector('.buffer-time');
-            const bufferContainer = bufferEl?.parentElement;
-            
-            if (availableEl) availableEl.textContent = formatTime(getAvailableMinutes());
-            if (plannedEl) plannedEl.textContent = formatTime(getPlannedMinutes());
-            if (bufferEl) {
-                bufferEl.textContent = formatTime(getBufferMinutes());
-                // Buffer Container Farbe aktualisieren
-                if (bufferContainer) {
-                    bufferContainer.className = `text-center p-4 rounded-2xl ${getBufferColor()}`;
-                }
-            }
-            
-            // Task Timer
-            const timeLeft = getCurrentTaskTimeLeft();
-            const taskTimerEl = document.querySelector('.task-timer');
-            if (taskTimerEl && timeLeft !== null) {
-                taskTimerEl.textContent = `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`;
-            }
-            
-            // Aktivitäten Finish-Zeiten aktualisieren
-            updateActivityTimes();
-            
-            // Alarm-Checks (nur alle 30 Sekunden um Performance zu schonen)
-            const now = new Date();
-            if (!state.lastAlarmCheck || (now - state.lastAlarmCheck) > 30000) {
-                checkAlarms();
-                state.lastAlarmCheck = now;
-            }
-        }
-        
-        // Alarm-Checks für Fallback-System
-        function checkAlarms() {
-            if (!alarmSystemReady) return;
-            
-            const now = new Date();
-            
-            // Prüfe ob Alarme neu geplant werden müssen (z.B. nach Browser-Neustart)
-            if (!state.alarmScheduled) {
-                console.log('Re-scheduling alarms after restart');
-                scheduleAlarms();
-                return;
-            }
-            
-            // Prüfe Abfahrts-Alarm (Fallback)
-            if (state.alarmEnabled && !serviceWorker) {
-                const [hours, minutes] = state.departureTime.split(':').map(Number);
-                const departureDate = new Date(now);
-                departureDate.setHours(hours, minutes, 0, 0);
-                
-                const alarmDate = new Date(departureDate.getTime() - (state.alarmMinutes * 60 * 1000));
-                const timeDiff = Math.abs(now.getTime() - alarmDate.getTime());
-                
-                // Wenn wir innerhalb von 30 Sekunden vom Alarm-Zeitpunkt sind
-                if (timeDiff < 30000 && now >= alarmDate && !state.departureAlarmTriggered) {
-                    state.departureAlarmTriggered = true;
-                    showDepartureNotification(state.departureTime, state.alarmMinutes);
-                    playAlarm();
-                    saveState();
-                }
-            }
-            
-            // Prüfe Task-Alarme (Fallback)
-            if (!serviceWorker) {
-                state.activities.forEach(activity => {
-                    if (!activity.completed && activity.endTime && !activity.alarmTriggered) {
-                        const endTime = new Date(activity.endTime);
-                        const timeDiff = Math.abs(now.getTime() - endTime.getTime());
-                        
-                        // Wenn wir innerhalb von 30 Sekunden vom End-Zeitpunkt sind
-                        if (timeDiff < 30000 && now >= endTime) {
-                            activity.alarmTriggered = true;
-                            showTaskCompletionNotification(activity.name);
-                            playAlarm();
-                            
-                            // Task automatisch als erledigt markieren nach 5 Sekunden
-                            setTimeout(() => {
-                                if (!activity.completed) {
-                                    toggleActivity(activity.id);
-                                }
-                            }, 5000);
-                            
-                            saveState();
-                        }
-                    }
-                });
-            }
-        }
-        
-        // Aktivitäten-Zeiten aktualisieren ohne komplettes Re-Render
-        function updateActivityTimes() {
-            const activityTimes = calculateActivityTimes();
-            
-            // Alle Activity-Time-Elemente finden und aktualisieren
-            const activityTimeElements = document.querySelectorAll('.activity-finish-time');
-            activityTimeElements.forEach((el, index) => {
-                if (activityTimes[index]) {
-                    el.textContent = activityTimes[index].finishTime;
-                    
-                    // Farbe je nach Status
-                    if (activityTimes[index].isCompleted) {
-                        el.className = 'font-mono font-bold text-lg activity-finish-time text-emerald-600';
-                    } else if (activityTimes[index].isCurrent) {
-                        el.className = 'font-mono font-bold text-lg activity-finish-time text-blue-600';
-                    } else {
-                        el.className = 'font-mono font-bold text-lg activity-finish-time text-slate-700';
-                    }
-                }
-            });
-        }
-        
-        // Force vollständiges Re-Render (für Edge Cases)
-        function forceUpdate() {
-            renderSafe();
-        }
 
-        // Start app when DOM is ready
+        // Start app
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
