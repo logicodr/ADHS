@@ -116,10 +116,12 @@
 
         function updateActivityName(value) {
             state.newActivity.name = value;
+            // Kein Re-Render beim Tippen!
         }
 
         function updateActivityDuration(value) {
             state.newActivity.duration = value;
+            // Kein Re-Render beim Tippen!
         }
 
         function toggleActivity(id) {
@@ -289,10 +291,10 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <div class="text-2xl font-mono font-bold text-slate-800">
+                                <div class="text-2xl font-mono font-bold text-slate-800 current-time">
                                     ${state.currentTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
-                                <div class="text-sm text-slate-500">
+                                <div class="text-sm text-slate-500 current-date">
                                     ${state.currentTime.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}
                                 </div>
                             </div>
@@ -304,7 +306,7 @@
                     <!-- Zeit-Übersicht -->
                     <div class="glass-effect rounded-3xl p-6 shadow-lg border border-white/50">
                         <div class="text-center mb-6">
-                            <h2 class="text-4xl font-bold mb-2 ${getTimeLeftColor()}">
+                            <h2 class="text-4xl font-bold mb-2 time-left-text ${getTimeLeftColor()}">
                                 ${getAvailableMinutes() > 0 ? formatTimeLeft(getAvailableMinutes()) : 'Zeit zum Gehen!'}
                             </h2>
                             <p class="text-slate-600">bis du um ${state.departureTime} rausmusst</p>
@@ -312,15 +314,15 @@
                         
                         <div class="grid grid-cols-3 gap-4">
                             <div class="text-center p-4 bg-blue-50 rounded-2xl">
-                                <div class="text-2xl font-bold text-blue-600">${formatTime(getAvailableMinutes())}</div>
+                                <div class="text-2xl font-bold text-blue-600 available-time">${formatTime(getAvailableMinutes())}</div>
                                 <div class="text-sm text-blue-600">Verfügbar</div>
                             </div>
                             <div class="text-center p-4 bg-indigo-50 rounded-2xl">
-                                <div class="text-2xl font-bold text-indigo-600">${formatTime(getPlannedMinutes())}</div>
+                                <div class="text-2xl font-bold text-indigo-600 planned-time">${formatTime(getPlannedMinutes())}</div>
                                 <div class="text-sm text-indigo-600">Geplant</div>
                             </div>
                             <div class="text-center p-4 rounded-2xl ${getBufferColor()}">
-                                <div class="text-2xl font-bold">${formatTime(getBufferMinutes())}</div>
+                                <div class="text-2xl font-bold buffer-time">${formatTime(getBufferMinutes())}</div>
                                 <div class="text-sm">Puffer</div>
                             </div>
                         </div>
@@ -352,7 +354,7 @@
                                 </div>
                                 ${timeLeft !== null ? `
                                     <div class="text-right">
-                                        <div class="text-3xl font-mono font-bold">
+                                        <div class="text-3xl font-mono font-bold task-timer">
                                             ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}
                                         </div>
                                         <div class="text-emerald-100">verbleibend</div>
@@ -457,6 +459,7 @@
                                             onchange="updateDepartureTime(this.value)"
                                             class="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
+                                        <p class="text-xs text-slate-500 mt-1">Zeit-Anzeige wird sofort aktualisiert</p>
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-medium text-slate-700">Alarm aktiviert</span>
@@ -582,11 +585,14 @@
         function updateDepartureTime(value) {
             state.departureTime = value;
             saveState();
+            // Vollständiges Re-Render nur bei wichtigen Änderungen
+            renderSafe();
         }
 
         function updateAlarmMinutes(value) {
             state.alarmMinutes = parseInt(value);
             saveState();
+            // Kein Re-Render nötig
         }
 
         function bindInputEvents() {
@@ -632,12 +638,79 @@
         function init() {
             loadState();
             
-            // Update time every second
+            // Update time every second - aber nur wenn kein Input aktiv ist!
             setInterval(() => {
                 state.currentTime = new Date();
-                renderSafe();
+                
+                // Prüfe ob User gerade tippt
+                const activeElement = document.activeElement;
+                const isTyping = activeElement && (
+                    activeElement.tagName === 'INPUT' || 
+                    activeElement.tagName === 'TEXTAREA' ||
+                    activeElement.tagName === 'SELECT'
+                );
+                
+                if (!isTyping) {
+                    // Nur Zeit-Elemente aktualisieren, nicht alles neu rendern
+                    updateTimeOnly();
+                }
             }, 1000);
             
+            renderSafe();
+        }
+        
+        // Nur Zeit aktualisieren ohne komplettes Re-Render
+        function updateTimeOnly() {
+            // Aktuelle Zeit
+            const timeElements = document.querySelectorAll('.current-time');
+            timeElements.forEach(el => {
+                if (el) {
+                    el.textContent = state.currentTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                }
+            });
+            
+            // Datum
+            const dateElements = document.querySelectorAll('.current-date');
+            dateElements.forEach(el => {
+                if (el) {
+                    el.textContent = state.currentTime.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                }
+            });
+            
+            // Zeit-Übersicht
+            const timeLeftEl = document.querySelector('.time-left-text');
+            if (timeLeftEl) {
+                const available = getAvailableMinutes();
+                timeLeftEl.textContent = available > 0 ? formatTimeLeft(available) : 'Zeit zum Gehen!';
+                timeLeftEl.className = `text-4xl font-bold mb-2 time-left-text ${getTimeLeftColor()}`;
+            }
+            
+            // Zeit-Boxen
+            const availableEl = document.querySelector('.available-time');
+            const plannedEl = document.querySelector('.planned-time');
+            const bufferEl = document.querySelector('.buffer-time');
+            const bufferContainer = bufferEl?.parentElement;
+            
+            if (availableEl) availableEl.textContent = formatTime(getAvailableMinutes());
+            if (plannedEl) plannedEl.textContent = formatTime(getPlannedMinutes());
+            if (bufferEl) {
+                bufferEl.textContent = formatTime(getBufferMinutes());
+                // Buffer Container Farbe aktualisieren
+                if (bufferContainer) {
+                    bufferContainer.className = `text-center p-4 rounded-2xl ${getBufferColor()}`;
+                }
+            }
+            
+            // Task Timer
+            const timeLeft = getCurrentTaskTimeLeft();
+            const taskTimerEl = document.querySelector('.task-timer');
+            if (taskTimerEl && timeLeft !== null) {
+                taskTimerEl.textContent = `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`;
+            }
+        }
+        
+        // Force vollständiges Re-Render (für Edge Cases)
+        function forceUpdate() {
             renderSafe();
         }
 
