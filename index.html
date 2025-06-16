@@ -29,19 +29,9 @@
             transform: translateY(-1px);
         }
         
-        .pulse-ring {
-            animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
-        }
-        
-        @keyframes pulse-ring {
-            0% {
-                transform: scale(0.8);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(1.2);
-                opacity: 0;
-            }
+        .current-task-border {
+            border: 2px solid #3B82F6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
     </style>
 </head>
@@ -121,7 +111,15 @@
             state.newActivity = { name: '', duration: 15 };
             state.showAddForm = false;
             saveState();
-            render();
+            renderSafe();
+        }
+
+        function updateActivityName(value) {
+            state.newActivity.name = value;
+        }
+
+        function updateActivityDuration(value) {
+            state.newActivity.duration = value;
         }
 
         function toggleActivity(id) {
@@ -129,14 +127,14 @@
             if (activity) {
                 activity.completed = !activity.completed;
                 saveState();
-                render();
+                renderSafe();
             }
         }
 
         function deleteActivity(id) {
             state.activities = state.activities.filter(a => a.id !== id);
             saveState();
-            render();
+            renderSafe();
         }
 
         function clearAll() {
@@ -146,7 +144,7 @@
                 state.taskStartTime = null;
                 state.isPaused = false;
                 saveState();
-                render();
+                renderSafe();
             }
         }
 
@@ -155,12 +153,12 @@
             state.taskStartTime = new Date();
             state.isPaused = false;
             saveState();
-            render();
+            renderSafe();
         }
 
         function pauseResumeTask() {
             state.isPaused = !state.isPaused;
-            render();
+            renderSafe();
         }
 
         function completeCurrentTask() {
@@ -181,7 +179,7 @@
                     }, 500);
                     
                     saveState();
-                    render();
+                    renderSafe();
                 }
             }
         }
@@ -247,7 +245,31 @@
             }
         }
 
-        // Render Funktion
+        // Render Funktion (Smart - behält Input-Focus)
+        function renderSafe() {
+            // Speichere aktuellen Focus
+            const activeElement = document.activeElement;
+            const activeId = activeElement ? activeElement.id : null;
+            const activeValue = activeElement ? activeElement.value : null;
+            const activeSelectionStart = activeElement ? activeElement.selectionStart : null;
+            
+            render();
+            
+            // Stelle Focus wieder her
+            if (activeId) {
+                const element = document.getElementById(activeId);
+                if (element) {
+                    element.focus();
+                    if (activeValue !== null) {
+                        element.value = activeValue;
+                    }
+                    if (activeSelectionStart !== null && element.setSelectionRange) {
+                        element.setSelectionRange(activeSelectionStart, activeSelectionStart);
+                    }
+                }
+            }
+        }
+
         function render() {
             const app = document.getElementById('app');
             const timeLeft = getCurrentTaskTimeLeft();
@@ -383,6 +405,11 @@
                                             id="activity-name"
                                             value="${state.newActivity.name}"
                                             placeholder="z.B. E-Mails checken"
+                                            autocomplete="off"
+                                            autocorrect="off"
+                                            spellcheck="false"
+                                            oninput="updateActivityName(this.value)"
+                                            onkeydown="if(event.key==='Enter') addActivity()"
                                             class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                         />
                                     </div>
@@ -396,6 +423,10 @@
                                             value="${state.newActivity.duration}"
                                             min="1"
                                             max="180"
+                                            inputmode="numeric"
+                                            autocomplete="off"
+                                            oninput="updateActivityDuration(this.value)"
+                                            onkeydown="if(event.key==='Enter') addActivity()"
                                             class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                         />
                                     </div>
@@ -423,6 +454,7 @@
                                             type="time"
                                             id="departure-time"
                                             value="${state.departureTime}"
+                                            onchange="updateDepartureTime(this.value)"
                                             class="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
@@ -437,7 +469,7 @@
                                             <label class="block text-sm font-medium text-slate-700 mb-2">
                                                 Alarm-Vorlaufzeit
                                             </label>
-                                            <select id="alarm-minutes" class="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                            <select id="alarm-minutes" onchange="updateAlarmMinutes(this.value)" class="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                                 <option value="5" ${state.alarmMinutes === 5 ? 'selected' : ''}>5 Minuten</option>
                                                 <option value="10" ${state.alarmMinutes === 10 ? 'selected' : ''}>10 Minuten</option>
                                                 <option value="15" ${state.alarmMinutes === 15 ? 'selected' : ''}>15 Minuten</option>
@@ -466,7 +498,7 @@
                                             activity.completed
                                                 ? 'bg-emerald-50 border border-emerald-200'
                                                 : state.currentTaskIndex === index
-                                                ? 'bg-blue-50 border-2 border-blue-200 shadow-lg pulse-ring'
+                                                ? 'bg-blue-50 current-task-border'
                                                 : 'bg-slate-50 border border-slate-200 hover:bg-slate-100'
                                         }">
                                             <button onclick="toggleActivity(${activity.id})" class="mr-4 p-1 rounded-full transition-colors ${
@@ -527,24 +559,34 @@
         // Zusätzliche Event Handler
         function toggleAddForm() {
             state.showAddForm = !state.showAddForm;
-            render();
+            renderSafe();
         }
 
         function cancelAddForm() {
             state.showAddForm = false;
             state.newActivity = { name: '', duration: 15 };
-            render();
+            renderSafe();
         }
 
         function toggleSettings() {
             state.showSettings = !state.showSettings;
-            render();
+            renderSafe();
         }
 
         function toggleAlarm() {
             state.alarmEnabled = !state.alarmEnabled;
             saveState();
-            render();
+            renderSafe();
+        }
+
+        function updateDepartureTime(value) {
+            state.departureTime = value;
+            saveState();
+        }
+
+        function updateAlarmMinutes(value) {
+            state.alarmMinutes = parseInt(value);
+            saveState();
         }
 
         function bindInputEvents() {
@@ -593,10 +635,10 @@
             // Update time every second
             setInterval(() => {
                 state.currentTime = new Date();
-                render();
+                renderSafe();
             }, 1000);
             
-            render();
+            renderSafe();
         }
 
         // Start app when DOM is ready
