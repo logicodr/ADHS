@@ -1,10 +1,7 @@
-// service-worker.js for ADHS Jetzt-Planer
-// Handles background notifications for tasks and departure alarms
+// service-worker.js - Komplette verbesserte Version für ADHS Jetzt-Planer
+const SW_VERSION = '2.0.0';
+const CACHE_NAME = 'adhs-jetzt-planer-cache-v2';
 
-const SW_VERSION = '1.0.0';
-const CACHE_NAME = 'adhs-jetzt-planer-cache-v1';
-
-// Assets to cache for offline use
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -12,401 +9,733 @@ const ASSETS_TO_CACHE = [
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
 
-// Scheduled alarms storage
-const scheduledAlarms = {
-  tasks: new Map(), // Maps task ID to alarm data
-  departure: null   // Departure alarm data
-};
+// ============================================================================
+// ALARM STORAGE - IndexedDB für persistente Speicherung
+// ============================================================================
+class AlarmStorage {
+  constructor() {
+    this.dbName = 'ADHSPlannerDB';
+    this.dbVersion = 1;
+    this.db = null;
+  }
 
-// Install event - cache assets for offline use
+  async init() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.dbName, this.dbVersion);
+      
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        this.db = request.result;
+        resolve(this.db);
+      };
+      
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        
+        // Store für Aufgaben-Alarme
+        if (!db.objectStoreNames.contains('taskAlarms')) {
+          const taskStore = db.createObjectStore('taskAlarms', { keyPath: 'id' });
+          taskStore.createIndex('endTime', 'endTime', { unique: false });
+        }
+        
+        // Store für Abfahrts-Alarm
+        if (!db.objectStoreNames.contains('departureAlarm')) {
+          db.createObjectStore('departureAlarm', { keyPath: 'id' });
+        }
+      };
+    });
+  }
+
+  async saveTaskAlarm(taskId, taskName, endTime) {
+    const transaction = this.db.transaction(['taskAlarms'], 'readwrite');
+    const store = transaction.objectStore('taskAlarms');
+    
+    return store.put({
+      id: taskId,
+      name: taskName,
+      endTime: endTime,
+      createdAt: new Date().toISOString(),
+      active: true
+    });
+  }
+
+  async saveDepartureAlarm(departureTime, alarmMinutes, alarmTime) {
+    const transaction = this.db.transaction(['departureAlarm'], 'readwrite');
+    const store = transaction.objectStore('departureAlarm');
+    
+    return store.put({
+      id: 'departure',
+      departureTime: departureTime,
+      alarmMinutes: alarmMinutes,
+      alarmTime: alarmTime,
+      active: true
+    });
+  }
+
+  async getAllTaskAlarms() {
+    const transaction = this.db.transaction(['taskAlarms'], 'readonly');
+    const store = transaction.objectStore('taskAlarms');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result.filter(alarm => alarm.active));
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getDepartureAlarm() {
+    const transaction = this.db.transaction(['departureAlarm'], 'readonly');
+    const store = transaction.objectStore('departureAlarm');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.get('departure');
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result && result.active ? result : null);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteTaskAlarm(taskId) {
+    const transaction = this.db.transaction(['taskAlarms'], 'readwrite');
+    const store = transaction.objectStore('taskAlarms');
+    return store.delete(taskId);
+  }
+
+  async deleteDepartureAlarm() {
+    const transaction = this.db.transaction(['departureAlarm'], 'readwrite');
+    const store = transaction.objectStore('departureAlarm');
+    return store.delete('departure');
+  }
+
+  async clearAllAlarms() {
+    const transaction = this.db.transaction(['taskAlarms', 'departureAlarm'], 'readwrite');
+    
+    const taskStore = transaction.objectStore('taskAlarms');
+    const departureStore = transaction.objectStore('departureAlarm');
+    
+    await Promise.all([
+      taskStore.clear(),
+      departureStore.clear()
+    ]);
+  }
+}
+
+// ============================================================================
+// ALARM MANAGER - Robuste Alarm-Verwaltung mit Wiederherstellung
+// ============================================================================
+class RobustAlarmManager {
+  constructor() {
+    this.storage = new AlarmStorage();
+    this.activeTimeouts = new Map();
+    this.checkInterval = null;
+    this.isInitialized = false;
+  }
+
+  async init() {
+    if (this.isInitialized) return;
+    
+    try {
+      await this.storage.init();
+      await this.restoreAllAlarms();
+      this.startPeriodicCheck();
+      this.isInitialized = true;
+      console.log('[AlarmManager] Initialized successfully');
+    } catch (error) {
+      console.error('[AlarmManager] Initialization failed:', error);
+    }
+  }
+
+  async restoreAllAlarms() {
+    console.log('[AlarmManager] Restoring alarms from storage...');
+    
+    try {
+      // Aufgaben-Alarme wiederherstellen
+      const taskAlarms = await this.storage.getAllTaskAlarms();
+      for (const alarm of taskAlarms) {
+        await this.scheduleTaskAlarmFromStorage(alarm);
+      }
+      
+      // Abfahrts-Alarm wiederherstellen
+      const departureAlarm = await this.storage.getDepartureAlarm();
+      if (departureAlarm) {
+        await this.scheduleDepartureAlarmFromStorage(departureAlarm);
+      }
+      
+      console.log(`[AlarmManager] Restored ${taskAlarms.length} task alarms and ${departureAlarm ? 1 : 0} departure alarm`);
+    } catch (error) {
+      console.error('[AlarmManager] Error restoring alarms:', error);
+    }
+  }
+
+  async scheduleTaskAlarmFromStorage(alarm) {
+    const now = new Date();
+    const endTime = new Date(alarm.endTime);
+    const timeUntilAlarm = endTime.getTime() - now.getTime();
+    
+    if (timeUntilAlarm <= 0) {
+      // Alarm ist überfällig - sofort auslösen
+      console.log(`[AlarmManager] Task alarm for '${alarm.name}' is overdue`);
+      await this.triggerOverdueTaskAlarm(alarm.id, alarm.name);
+      await this.storage.deleteTaskAlarm(alarm.id);
+      return;
+    }
+    
+    // Alarm planen
+    const timeoutId = setTimeout(() => {
+      this.triggerTaskAlarm(alarm.id, alarm.name);
+    }, timeUntilAlarm);
+    
+    this.activeTimeouts.set(`task-${alarm.id}`, timeoutId);
+    console.log(`[AlarmManager] Restored task alarm for '${alarm.name}' in ${Math.floor(timeUntilAlarm / 60000)} minutes`);
+  }
+
+  async scheduleDepartureAlarmFromStorage(alarm) {
+    const now = new Date();
+    const alarmTime = new Date(alarm.alarmTime);
+    const timeUntilAlarm = alarmTime.getTime() - now.getTime();
+    
+    if (timeUntilAlarm <= 0) {
+      // Alarm ist überfällig
+      console.log('[AlarmManager] Departure alarm is overdue');
+      await this.triggerOverdueDepartureAlarm(alarm.departureTime, alarm.alarmMinutes);
+      await this.storage.deleteDepartureAlarm();
+      return;
+    }
+    
+    // Alarm planen
+    const timeoutId = setTimeout(() => {
+      this.triggerDepartureAlarm(alarm.departureTime, alarm.alarmMinutes);
+    }, timeUntilAlarm);
+    
+    this.activeTimeouts.set('departure', timeoutId);
+    console.log(`[AlarmManager] Restored departure alarm in ${Math.floor(timeUntilAlarm / 60000)} minutes`);
+  }
+
+  // Periodische Überprüfung (Backup-Mechanismus)
+  startPeriodicCheck() {
+    // Alle 30 Sekunden prüfen
+    this.checkInterval = setInterval(() => {
+      this.checkAlarms();
+    }, 30000);
+  }
+
+  async checkAlarms() {
+    const now = new Date();
+    
+    try {
+      // Prüfe Aufgaben-Alarme
+      const taskAlarms = await this.storage.getAllTaskAlarms();
+      for (const alarm of taskAlarms) {
+        const endTime = new Date(alarm.endTime);
+        const timeUntilAlarm = endTime.getTime() - now.getTime();
+        
+        // Wenn Alarm überfällig ist (mit 1-Minuten-Puffer)
+        if (timeUntilAlarm <= -60000) {
+          console.log(`[AlarmManager] Found overdue task alarm: ${alarm.name}`);
+          await this.triggerOverdueTaskAlarm(alarm.id, alarm.name);
+          await this.storage.deleteTaskAlarm(alarm.id);
+        }
+        // Wenn Alarm bald fällig ist, aber kein Timeout aktiv
+        else if (timeUntilAlarm <= 60000 && timeUntilAlarm > 0 && !this.activeTimeouts.has(`task-${alarm.id}`)) {
+          console.log(`[AlarmManager] Rescheduling missing task alarm: ${alarm.name}`);
+          await this.scheduleTaskAlarmFromStorage(alarm);
+        }
+      }
+      
+      // Prüfe Abfahrts-Alarm
+      const departureAlarm = await this.storage.getDepartureAlarm();
+      if (departureAlarm) {
+        const alarmTime = new Date(departureAlarm.alarmTime);
+        const timeUntilAlarm = alarmTime.getTime() - now.getTime();
+        
+        if (timeUntilAlarm <= -60000) {
+          console.log('[AlarmManager] Found overdue departure alarm');
+          await this.triggerOverdueDepartureAlarm(departureAlarm.departureTime, departureAlarm.alarmMinutes);
+          await this.storage.deleteDepartureAlarm();
+        }
+        else if (timeUntilAlarm <= 60000 && timeUntilAlarm > 0 && !this.activeTimeouts.has('departure')) {
+          console.log('[AlarmManager] Rescheduling missing departure alarm');
+          await this.scheduleDepartureAlarmFromStorage(departureAlarm);
+        }
+      }
+    } catch (error) {
+      console.error('[AlarmManager] Error during periodic check:', error);
+    }
+  }
+
+  async triggerTaskAlarm(taskId, taskName) {
+    console.log(`[AlarmManager] Task alarm triggered: ${taskName}`);
+    
+    // Notification anzeigen
+    await this.showTaskNotification(taskId, taskName);
+    
+    // Aus Speicher und aktiven Timeouts entfernen
+    await this.storage.deleteTaskAlarm(taskId);
+    this.activeTimeouts.delete(`task-${taskId}`);
+    
+    // Clients benachrichtigen
+    await this.notifyClients({
+      type: 'TASK_ALARM',
+      taskId: taskId,
+      taskName: taskName
+    });
+  }
+
+  async triggerOverdueTaskAlarm(taskId, taskName) {
+    console.log(`[AlarmManager] Overdue task alarm: ${taskName}`);
+    
+    await this.showTaskNotification(taskId, taskName, true);
+    await this.notifyClients({
+      type: 'TASK_ALARM_OVERDUE',
+      taskId: taskId,
+      taskName: taskName
+    });
+  }
+
+  async triggerDepartureAlarm(departureTime, alarmMinutes) {
+    console.log(`[AlarmManager] Departure alarm triggered: ${alarmMinutes} min before ${departureTime}`);
+    
+    await this.showDepartureNotification(departureTime, alarmMinutes);
+    
+    // Aus Speicher und aktiven Timeouts entfernen
+    await this.storage.deleteDepartureAlarm();
+    this.activeTimeouts.delete('departure');
+    
+    await this.notifyClients({
+      type: 'DEPARTURE_ALARM',
+      departureTime: departureTime,
+      alarmMinutes: alarmMinutes
+    });
+  }
+
+  async triggerOverdueDepartureAlarm(departureTime, alarmMinutes) {
+    console.log(`[AlarmManager] Overdue departure alarm: ${departureTime}`);
+    
+    await this.showDepartureNotification(departureTime, alarmMinutes, true);
+    await this.notifyClients({
+      type: 'DEPARTURE_ALARM_OVERDUE',
+      departureTime: departureTime,
+      alarmMinutes: alarmMinutes
+    });
+  }
+
+  async showTaskNotification(taskId, taskName, isOverdue = false) {
+    const title = 'ADHS Jetzt-Planer';
+    const body = isOverdue 
+      ? `Aufgabe überfällig: ${taskName}` 
+      : `Aufgabe abgeschlossen: ${taskName}`;
+    
+    return self.registration.showNotification(title, {
+      body: body,
+      icon: '/icon-192x192.png',
+      badge: '/badge-96x96.png',
+      tag: `task-${taskId}`,
+      renotify: true,
+      requireInteraction: true,
+      vibrate: isOverdue ? [300, 100, 300, 100, 300] : [200, 100, 200],
+      silent: false,
+      actions: [
+        { action: 'mark-done', title: 'Erledigt' },
+        { action: 'snooze', title: 'Später' }
+      ]
+    });
+  }
+
+  async showDepartureNotification(departureTime, alarmMinutes, isOverdue = false) {
+    const title = 'ADHS Jetzt-Planer';
+    const body = isOverdue
+      ? `Du solltest schon unterwegs sein! (${departureTime})`
+      : `In ${alarmMinutes} Minuten musst du rausgehen!`;
+    
+    return self.registration.showNotification(title, {
+      body: body,
+      icon: '/icon-192x192.png',
+      badge: '/badge-96x96.png',
+      tag: 'departure',
+      renotify: true,
+      requireInteraction: true,
+      vibrate: [300, 200, 300, 200, 300],
+      silent: false,
+      actions: [
+        { action: 'got-it', title: 'Verstanden' },
+        { action: 'snooze-5', title: '+5 Min' }
+      ]
+    });
+  }
+
+  async notifyClients(data) {
+    const clients = await self.clients.matchAll({
+      includeUncontrolled: true,
+      type: 'window'
+    });
+    
+    for (const client of clients) {
+      client.postMessage(data);
+    }
+  }
+
+  // Öffentliche Methoden für Service Worker
+  async scheduleTaskAlarm(taskId, taskName, endTime) {
+    // In Datenbank speichern
+    await this.storage.saveTaskAlarm(taskId, taskName, endTime);
+    
+    // Sofort planen
+    const alarm = { id: taskId, name: taskName, endTime: endTime };
+    await this.scheduleTaskAlarmFromStorage(alarm);
+  }
+
+  async cancelTaskAlarm(taskId) {
+    // Aus Datenbank löschen
+    await this.storage.deleteTaskAlarm(taskId);
+    
+    // Timeout abbrechen
+    const timeoutId = this.activeTimeouts.get(`task-${taskId}`);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      this.activeTimeouts.delete(`task-${taskId}`);
+    }
+  }
+
+  async scheduleDepartureAlarm(departureTime, alarmMinutes, alarmTime) {
+    // In Datenbank speichern
+    await this.storage.saveDepartureAlarm(departureTime, alarmMinutes, alarmTime);
+    
+    // Sofort planen
+    const alarm = { departureTime, alarmMinutes, alarmTime };
+    await this.scheduleDepartureAlarmFromStorage(alarm);
+  }
+
+  async cancelDepartureAlarm() {
+    // Aus Datenbank löschen
+    await this.storage.deleteDepartureAlarm();
+    
+    // Timeout abbrechen
+    const timeoutId = this.activeTimeouts.get('departure');
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      this.activeTimeouts.delete('departure');
+    }
+  }
+
+  async cancelAllAlarms() {
+    // Aus Datenbank löschen
+    await this.storage.clearAllAlarms();
+    
+    // Alle Timeouts abbrechen
+    for (const [key, timeoutId] of this.activeTimeouts) {
+      clearTimeout(timeoutId);
+    }
+    this.activeTimeouts.clear();
+  }
+}
+
+// ============================================================================
+// SERVICE WORKER EVENTS
+// ============================================================================
+
+// Globale Alarm-Manager Instanz
+let alarmManager = null;
+
+// Install event
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing Service Worker...', SW_VERSION);
-  
-  // Skip waiting to activate immediately
+  console.log('[Service Worker] Installing...', SW_VERSION);
   self.skipWaiting();
   
-  // Cache assets
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[Service Worker] Caching app assets');
-        return cache.addAll(ASSETS_TO_CACHE);
-      })
+      .then(cache => cache.addAll(ASSETS_TO_CACHE))
+      .catch(error => console.error('[Service Worker] Cache failed:', error))
   );
 });
 
-// Activate event - clean up old caches
+// Activate event
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating Service Worker...', SW_VERSION);
+  console.log('[Service Worker] Activating...', SW_VERSION);
   
-  // Clean up old caches
   event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
-          console.log('[Service Worker] Removing old cache', key);
-          return caches.delete(key);
-        }
-      }));
-    })
+    Promise.all([
+      // Cache cleanup
+      caches.keys().then(keyList => {
+        return Promise.all(keyList.map(key => {
+          if (key !== CACHE_NAME) {
+            console.log('[Service Worker] Removing old cache:', key);
+            return caches.delete(key);
+          }
+        }));
+      }),
+      
+      // Initialize alarm manager
+      initializeAlarmManager(),
+      
+      // Take control
+      self.clients.claim()
+    ])
   );
-  
-  // Ensure the service worker takes control immediately
-  return self.clients.claim();
 });
 
-// Fetch event - serve cached assets when offline
+// Initialize alarm manager
+async function initializeAlarmManager() {
+  try {
+    alarmManager = new RobustAlarmManager();
+    await alarmManager.init();
+    console.log('[Service Worker] Alarm manager initialized');
+  } catch (error) {
+    console.error('[Service Worker] Failed to initialize alarm manager:', error);
+  }
+}
+
+// Fetch event
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
-      .then((response) => {
-        // Return cached response if found
+      .then(response => {
         if (response) {
           return response;
         }
         
-        // Otherwise fetch from network
-        return fetch(event.request);
+        return Promise.race([
+          fetch(event.request),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Network timeout')), 5000)
+          )
+        ]);
       })
       .catch(() => {
-        // Fallback for offline resources, e.g. show offline page
-        return caches.match('/');
+        if (event.request.url.includes('.html') || event.request.url.endsWith('/')) {
+          return caches.match('/');
+        }
+        
+        return new Response('Offline - Resource not available', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain' }
+        });
       })
   );
 });
 
-// Message event - handle messages from the main app
-self.addEventListener('message', (event) => {
+// Message handling
+self.addEventListener('message', async (event) => {
   console.log('[Service Worker] Received message:', event.data);
   
-  // Destructure message data
+  if (!alarmManager) {
+    await initializeAlarmManager();
+  }
+  
   const { type } = event.data;
   
-  switch (type) {
-    case 'SCHEDULE_TASK_ALARM':
-      scheduleTaskAlarm(event.data);
-      break;
-      
-    case 'CANCEL_TASK_ALARM':
-      cancelTaskAlarm(event.data.taskId);
-      break;
-      
-    case 'SCHEDULE_DEPARTURE_ALARM':
-      scheduleDepartureAlarm(event.data);
-      break;
-      
-    case 'CANCEL_DEPARTURE_ALARM':
-      cancelDepartureAlarm();
-      break;
-      
-    case 'CANCEL_ALL_ALARMS':
-      cancelAllAlarms();
-      break;
-      
-    case 'REGISTER_ALARMS':
-      registerAlarms(event.data);
-      break;
-  }
-});
-
-// Schedule a task alarm
-function scheduleTaskAlarm(data) {
-  const { taskId, taskName, endTime } = data;
-  
-  // Calculate time until alarm
-  const now = new Date();
-  const alarmTime = new Date(endTime);
-  const timeUntilAlarm = alarmTime.getTime() - now.getTime();
-  
-  // Don't schedule if the time is in the past
-  if (timeUntilAlarm <= 0) {
-    console.log('[Service Worker] Task alarm time is in the past, not scheduling');
-    return;
-  }
-  
-  console.log(`[Service Worker] Scheduling task alarm for '${taskName}' in ${Math.floor(timeUntilAlarm / 60000)} minutes`);
-  
-  // Store the task data
-  const alarmData = {
-    id: taskId,
-    name: taskName,
-    time: alarmTime,
-    timeoutId: setTimeout(() => triggerTaskAlarm(taskId, taskName), timeUntilAlarm)
-  };
-  
-  // Add to map of scheduled alarms
-  scheduledAlarms.tasks.set(taskId, alarmData);
-}
-
-// Cancel a task alarm
-function cancelTaskAlarm(taskId) {
-  const alarmData = scheduledAlarms.tasks.get(taskId);
-  
-  if (alarmData) {
-    console.log(`[Service Worker] Cancelling task alarm for ID: ${taskId}`);
-    
-    // Clear the timeout
-    clearTimeout(alarmData.timeoutId);
-    
-    // Remove from map
-    scheduledAlarms.tasks.delete(taskId);
-  }
-}
-
-// Schedule departure alarm
-function scheduleDepartureAlarm(data) {
-  const { departureTime, alarmMinutes, alarmTime } = data;
-  
-  // Calculate time until alarm
-  const now = new Date();
-  const alarm = new Date(alarmTime);
-  const timeUntilAlarm = alarm.getTime() - now.getTime();
-  
-  // Don't schedule if the time is in the past
-  if (timeUntilAlarm <= 0) {
-    console.log('[Service Worker] Departure alarm time is in the past, not scheduling');
-    return;
-  }
-  
-  console.log(`[Service Worker] Scheduling departure alarm ${alarmMinutes} minutes before ${departureTime}`);
-  console.log(`[Service Worker] Alarm will trigger in ${Math.floor(timeUntilAlarm / 60000)} minutes`);
-  
-  // Cancel any existing departure alarm
-  cancelDepartureAlarm();
-  
-  // Store the departure alarm data
-  scheduledAlarms.departure = {
-    departureTime: departureTime,
-    alarmMinutes: alarmMinutes,
-    time: alarm,
-    timeoutId: setTimeout(() => triggerDepartureAlarm(departureTime, alarmMinutes), timeUntilAlarm)
-  };
-}
-
-// Cancel departure alarm
-function cancelDepartureAlarm() {
-  if (scheduledAlarms.departure) {
-    console.log('[Service Worker] Cancelling departure alarm');
-    
-    // Clear the timeout
-    clearTimeout(scheduledAlarms.departure.timeoutId);
-    
-    // Reset departure alarm
-    scheduledAlarms.departure = null;
-  }
-}
-
-// Cancel all alarms
-function cancelAllAlarms() {
-  console.log('[Service Worker] Cancelling all alarms');
-  
-  // Cancel all task alarms
-  for (const [taskId, alarmData] of scheduledAlarms.tasks) {
-    clearTimeout(alarmData.timeoutId);
-  }
-  
-  // Clear tasks map
-  scheduledAlarms.tasks.clear();
-  
-  // Cancel departure alarm
-  cancelDepartureAlarm();
-}
-
-// Register multiple alarms from main app
-function registerAlarms(data) {
-  const { departureTime, departureAlarm, tasks } = data;
-  
-  // Cancel all existing alarms first
-  cancelAllAlarms();
-  
-  // Schedule departure alarm
-  if (departureAlarm.enabled) {
-    // Calculate alarm time
-    const departureHours = parseInt(departureTime.split(':')[0]);
-    const departureMinutes = parseInt(departureTime.split(':')[1]);
-    
-    const now = new Date();
-    const alarmDate = new Date(now);
-    
-    // Set to departure time
-    alarmDate.setHours(departureHours);
-    alarmDate.setMinutes(departureMinutes);
-    
-    // Subtract alarm minutes
-    alarmDate.setMinutes(alarmDate.getMinutes() - departureAlarm.minutesBefore);
-    
-    // If the time is in the past, add a day
-    if (alarmDate < now) {
-      alarmDate.setDate(alarmDate.getDate() + 1);
+  try {
+    switch (type) {
+      case 'SCHEDULE_TASK_ALARM':
+        await alarmManager.scheduleTaskAlarm(
+          event.data.taskId,
+          event.data.taskName,
+          event.data.endTime
+        );
+        break;
+        
+      case 'CANCEL_TASK_ALARM':
+        await alarmManager.cancelTaskAlarm(event.data.taskId);
+        break;
+        
+      case 'SCHEDULE_DEPARTURE_ALARM':
+        await alarmManager.scheduleDepartureAlarm(
+          event.data.departureTime,
+          event.data.alarmMinutes,
+          event.data.alarmTime
+        );
+        break;
+        
+      case 'CANCEL_DEPARTURE_ALARM':
+        await alarmManager.cancelDepartureAlarm();
+        break;
+        
+      case 'CANCEL_ALL_ALARMS':
+        await alarmManager.cancelAllAlarms();
+        break;
+        
+      case 'REGISTER_ALARMS':
+        await registerAlarms(event.data);
+        break;
+        
+      case 'GET_ALARM_STATUS':
+        await sendAlarmStatus();
+        break;
+        
+      default:
+        console.warn('[Service Worker] Unknown message type:', type);
     }
+  } catch (error) {
+    console.error('[Service Worker] Error handling message:', error);
     
-    // Schedule the alarm
-    scheduleDepartureAlarm({
-      departureTime: departureTime,
-      alarmMinutes: departureAlarm.minutesBefore,
-      alarmTime: alarmDate.toISOString()
-    });
-  }
-  
-  // Schedule task alarms
-  for (const task of tasks) {
-    if (task.endTime) {
-      scheduleTaskAlarm({
-        taskId: task.id,
-        taskName: task.name,
-        endTime: task.endTime
+    const clients = await self.clients.matchAll();
+    for (const client of clients) {
+      client.postMessage({
+        type: 'ERROR',
+        error: error.message,
+        originalMessage: event.data
       });
     }
   }
-}
+});
 
-// Trigger task alarm
-function triggerTaskAlarm(taskId, taskName) {
-  console.log(`[Service Worker] Task alarm triggered for: ${taskName}`);
+// Alarm-Registrierung
+async function registerAlarms(data) {
+  const { departureTime, departureAlarm, tasks } = data;
   
-  // Show notification
-  self.registration.showNotification('ADHS Jetzt-Planer', {
-    body: `Aufgabe abgeschlossen: ${taskName}`,
-    icon: '/icon-192x192.png',
-    badge: '/badge-96x96.png',
-    tag: `task-${taskId}`,
-    renotify: true,
-    requireInteraction: true,
-    vibrate: [200, 100, 200],
-    silent: false
-  });
+  await alarmManager.cancelAllAlarms();
   
-  // Remove from scheduled alarms
-  scheduledAlarms.tasks.delete(taskId);
+  // Abfahrts-Alarm planen
+  if (departureAlarm?.enabled) {
+    const [hours, minutes] = departureTime.split(':').map(Number);
+    const now = new Date();
+    const alarmDate = new Date(now);
+    
+    alarmDate.setHours(hours, minutes - departureAlarm.minutesBefore, 0, 0);
+    
+    if (alarmDate <= now) {
+      alarmDate.setDate(alarmDate.getDate() + 1);
+    }
+    
+    await alarmManager.scheduleDepartureAlarm(
+      departureTime,
+      departureAlarm.minutesBefore,
+      alarmDate.toISOString()
+    );
+  }
   
-  // Try to notify any open clients
-  notifyClients({
-    type: 'TASK_ALARM',
-    taskId: taskId,
-    taskName: taskName
-  });
-}
-
-// Trigger departure alarm
-function triggerDepartureAlarm(departureTime, alarmMinutes) {
-  console.log(`[Service Worker] Departure alarm triggered: ${alarmMinutes} minutes before ${departureTime}`);
-  
-  // Show notification
-  self.registration.showNotification('ADHS Jetzt-Planer', {
-    body: `In ${alarmMinutes} Minuten musst du rausgehen!`,
-    icon: '/icon-192x192.png',
-    badge: '/badge-96x96.png',
-    tag: 'departure',
-    renotify: true,
-    requireInteraction: true,
-    vibrate: [300, 200, 300, 200, 300],
-    silent: false
-  });
-  
-  // Reset departure alarm
-  scheduledAlarms.departure = null;
-  
-  // Try to notify any open clients
-  notifyClients({
-    type: 'DEPARTURE_ALARM',
-    departureTime: departureTime,
-    alarmMinutes: alarmMinutes
-  });
-}
-
-// Notify all clients
-async function notifyClients(data) {
-  const clients = await self.clients.matchAll({
-    includeUncontrolled: true,
-    type: 'window'
-  });
-  
-  for (const client of clients) {
-    client.postMessage(data);
+  // Aufgaben-Alarme planen
+  for (const task of tasks) {
+    if (task.endTime) {
+      await alarmManager.scheduleTaskAlarm(
+        task.id,
+        task.name,
+        task.endTime
+      );
+    }
   }
 }
 
-// Push notification event
-self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push received:', event);
+// Alarm-Status senden
+async function sendAlarmStatus() {
+  try {
+    const taskAlarms = await alarmManager.storage.getAllTaskAlarms();
+    const departureAlarm = await alarmManager.storage.getDepartureAlarm();
+    
+    const clients = await self.clients.matchAll();
+    for (const client of clients) {
+      client.postMessage({
+        type: 'ALARM_STATUS',
+        taskAlarms: taskAlarms,
+        departureAlarm: departureAlarm
+      });
+    }
+  } catch (error) {
+    console.error('[Service Worker] Error sending alarm status:', error);
+  }
+}
+
+// Notification click handling
+self.addEventListener('notificationclick', (event) => {
+  console.log('[Service Worker] Notification clicked:', event);
   
-  let title = 'ADHS Jetzt-Planer';
-  let options = {
-    body: 'Neue Nachricht',
-    icon: '/icon-192x192.png',
-    badge: '/badge-96x96.png'
-  };
+  event.notification.close();
   
-  // Try to parse the data
-  if (event.data) {
-    try {
-      const data = event.data.json();
-      if (data.title) title = data.title;
-      if (data.body) options.body = data.body;
-    } catch (e) {
-      console.error('[Service Worker] Error parsing push data:', e);
+  if (event.action === 'mark-done') {
+    handleTaskComplete(event.notification.tag);
+  } else if (event.action === 'snooze') {
+    handleTaskSnooze(event.notification.tag);
+  } else if (event.action === 'snooze-5') {
+    handleDepartureSnooze();
+  } else {
+    openApp();
+  }
+});
+
+async function handleTaskComplete(tag) {
+  const taskId = tag.replace('task-', '');
+  
+  const clients = await self.clients.matchAll({ type: 'window' });
+  for (const client of clients) {
+    client.postMessage({
+      type: 'TASK_COMPLETED',
+      taskId: taskId
+    });
+  }
+}
+
+async function handleTaskSnooze(tag) {
+  const taskId = tag.replace('task-', '');
+  const newEndTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  
+  try {
+    const taskAlarms = await alarmManager.storage.getAllTaskAlarms();
+    const task = taskAlarms.find(t => t.id === taskId);
+    
+    if (task) {
+      await alarmManager.scheduleTaskAlarm(taskId, task.name, newEndTime);
+    }
+  } catch (error) {
+    console.error('[Service Worker] Error snoozing task:', error);
+  }
+}
+
+async function handleDepartureSnooze() {
+  const newAlarmTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  
+  try {
+    const departureAlarm = await alarmManager.storage.getDepartureAlarm();
+    if (departureAlarm) {
+      await alarmManager.scheduleDepartureAlarm(
+        departureAlarm.departureTime,
+        departureAlarm.alarmMinutes,
+        newAlarmTime
+      );
+    }
+  } catch (error) {
+    console.error('[Service Worker] Error snoozing departure:', error);
+  }
+}
+
+async function openApp() {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  
+  for (const client of clients) {
+    if (client.url.includes('/') && 'focus' in client) {
+      return client.focus();
     }
   }
   
-  // Show the notification
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
-});
-
-// Notification click event
-self.addEventListener('notificationclick', (event) => {
-  console.log('[Service Worker] Notification click received:', event);
-  
-  // Close the notification
-  event.notification.close();
-  
-  // Open the app when notification is clicked
-  event.waitUntil(
-    self.clients.matchAll({
-      type: 'window'
-    }).then((clientList) => {
-      // If a window is already open, focus it
-      for (const client of clientList) {
-        if (client.url === '/' && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      
-      // Otherwise open a new window
-      if (self.clients.openWindow) {
-        return self.clients.openWindow('/');
-      }
-    })
-  );
-});
-
-// Background sync event
-self.addEventListener('sync', (event) => {
-  console.log('[Service Worker] Background sync event:', event);
-  
-  if (event.tag === 'check-alarms') {
-    // Check and reschedule alarms if needed
-    event.waitUntil(checkAndRescheduleAlarms());
+  if (self.clients.openWindow) {
+    return self.clients.openWindow('/');
   }
-});
-
-// Check and reschedule alarms after restart
-async function checkAndRescheduleAlarms() {
-  console.log('[Service Worker] Checking and rescheduling alarms');
-  
-  // Try to retrieve alarm data from IndexedDB or other storage
-  // and reschedule them
-  
-  // This would need implementation to fully work
 }
 
-// Periodic background sync - Not widely supported yet
-// but can be used for future compatibility
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'check-alarms') {
-    event.waitUntil(checkAndRescheduleAlarms());
+// Background sync
+self.addEventListener('sync', (event) => {
+  console.log('[Service Worker] Background sync:', event.tag);
+  
+  if (event.tag === 'restore-alarms') {
+    event.waitUntil(
+      initializeAlarmManager()
+        .then(() => alarmManager.restoreAllAlarms())
+        .catch(error => console.error('[Service Worker] Sync failed:', error))
+    );
   }
 });
 
-console.log('[Service Worker] Service worker script loaded', SW_VERSION);
+// Error handling
+self.addEventListener('error', (event) => {
+  console.error('[Service Worker] Unhandled error:', event.error);
+});
+
+self.addEventListener('unhandledrejection', (event) => {
+  console.error('[Service Worker] Unhandled promise rejection:', event.reason);
+});
+
+console.log('[Service Worker] Enhanced service worker loaded', SW_VERSION);
